@@ -83,7 +83,7 @@ export async function createUser({ email, password, name, businessName }) {
   );
 }
 
-/** Make sure the reviewer test account exists (credentials come from env). */
+/** Make sure the shared demo account exists (credentials come from env). */
 export async function ensureDemoUser() {
   const email = process.env.DEMO_EMAIL;
   const password = process.env.DEMO_PASSWORD;

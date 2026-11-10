@@ -43,7 +43,7 @@ const FLASH = {
   declined: ['ok', 'Thanks for letting us know. The sender has been notified.'],
   clientpaid: ['ok', 'Thanks! We\'ve let the sender know you paid.'],
   err: ['err', 'Something went wrong. Please try again.'],
-  demoreset: ['info', 'The shared test account keeps a fixed connector URL so reviewers can use it. Create your own account to get a private one.'],
+  demoreset: ['info', 'The shared test account keeps a fixed connector URL so anyone can try Dealflow with it. Create your own account to get a private one.'],
 };
 const flashFrom = (req) => {
   const f = FLASH[req.query.m];

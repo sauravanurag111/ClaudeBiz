@@ -2,27 +2,64 @@
 
 **Tell Claude what you're charging. Dealflow gets you paid.**
 
-Dealflow is a small business that runs on the customer's own Claude, with **no AI inside the app**.
-A freelancer or small agency describes a job in Claude. Claude writes the quote (scope, line items, terms) and
-sends it to Dealflow over MCP. Dealflow hosts it at a public link the client can accept in one click, turns the
-accepted quote into an invoice, and sends Claude-written payment reminders on schedule until the invoice is paid.
+Dealflow is the quote-to-cash back office for **freelancers**, and for the **small business owners** who sell the
+same way. It runs on the customer's own Claude, with **no AI inside the app**.
+
+A freelancer describes a job to Claude in a sentence. Claude writes the quote (scope, line items, terms, cover email)
+and sends it to Dealflow over MCP. Dealflow emails it to the client, hosts it at a link the client can accept in one
+click, turns the accepted quote into an invoice, and keeps sending polite follow-ups until the invoice is paid.
 
 | | |
 |---|---|
 | Live app | https://dealflow-2vnc.onrender.com |
-| Test login | `demo@dealflow.app` / `demo1234` |
-| MCP connector URL (test account) | `https://dealflow-2vnc.onrender.com/mcp/demo-volopay-7Qx2pLk9` (your own account's URL is on the **Connect Claude** page) |
+| Demo login | `demo@dealflow.app` / `demo1234` |
+| MCP connector URL (demo account) | `https://dealflow-2vnc.onrender.com/mcp/demo-dealflow-7Qx2pLk9` (your own account's URL is on the **Connect Claude** page) |
 
-## Submission documents
+## Documents
 
-[Strategy (2 pages)](docs/Dealflow_Strategy.pdf) · [Architecture & implementation notes](docs/Dealflow_Architecture.pdf) ·
-[Economics model](docs/Dealflow_Economics.xlsx) · [Video script](docs/VIDEO_SCRIPT.md) · [Submission checklist](docs/SUBMISSION.md)
+[Business strategy](docs/Dealflow_Strategy.pdf) · [Architecture & implementation notes](docs/Dealflow_Architecture.pdf) ·
+[Unit economics model](docs/Dealflow_Economics.xlsx)
+
+## Who it's for, and why freelancers first
+
+**Primary: freelancers.** Designers, developers, writers, marketers and consultants who sell their own time.
+**Secondary: small business owners**, such as studios, agencies and consultancies of 2–20 people, who quote and invoice
+the same way at higher volume.
+
+A freelancer is the whole company. The person doing the work is also the sales team, the finance team and the person
+chasing payment, and their rent depends on it. The part of the job between "the client said yes on a call" and "the
+money is in my account" is unpaid, awkward and easy to drop:
+
+- **The market is large and growing.** India is widely estimated to have about 15 million freelancers, the
+  second-largest freelance workforce after the US ([estimate, 2024](https://mediaindia.eu/?p=137926)). NITI Aayog
+  projects India's gig workforce to grow from 7.7 million (2020–21) to 23.5 million by 2029–30
+  ([NITI Aayog, 2022](https://www.niti.gov.in/sites/default/files/2022-06/Policy_Brief_India's_Booming_Gig_and_Platform_Economy_27062022.pdf)).
+  In the US, 64 million people (38% of the workforce) freelanced in 2023
+  ([Upwork Freelance Forward 2023](https://www.upwork.com/research/freelance-forward-2023-research-report)).
+- **Getting paid is the core pain.** About 61% of Indian freelancers surveyed have gone unpaid at least once, and many
+  are paid only 2–4 weeks after invoicing
+  ([PayPal India freelancer survey, 2018, n=500](https://yourstory.com/2018/01/41pc-freelancers-witnessing-growth-2017-india-now-largest-freelancers-market-paypal-report)).
+  In the US, 71% of freelancers have had trouble collecting payment, and 81% of those were paid late
+  ([Freelancers Union](https://blog.freelancersunion.org/2015/12/10/costs-nonpayment/)).
+  Across 100,000+ freelancers' invoices, 29% were paid after their due date
+  ([Bonsai](https://www.hellobonsai.com/blog/late-freelance-payment)).
+- **The admin eats billable time.** Freelancers report losing about 204 hours a year to admin and paperwork
+  ([Smallpdf survey via ContentGrip](https://contentgrip.com/freelancer-admin-ai-gap)).
+- **They already use AI.** Freelancers adopt new tools fast and many already pay for Claude. Dealflow turns that
+  subscription into a working back office, with no second AI bill.
+- **They're easy to reach, and they spread it.** Freelancers gather in communities and recommend tools to each other.
+  Every quote they send puts Dealflow in front of a client, and those clients are often the small businesses we target next.
+
+**Why this product:** Claude can already write an excellent quote, but it can't host it, see that the client opened
+it, record their acceptance, or send a reminder next Tuesday after the chat has closed. Invoicing software can do those
+things, but it makes the freelancer fill in forms. Dealflow joins the two: the customer's Claude does the thinking and
+writing, and Dealflow does everything that has to keep happening after the chat ends.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-  U[Business owner] -- "Quote Meesho for a logo redesign..." --> C[Claude<br/>customer's own plan]
+  U[Freelancer] -- "Quote Meesho for a logo redesign..." --> C[Claude<br/>customer's own plan]
   C -- MCP tools over HTTPS --> D[Dealflow server<br/>Node + Express]
   D <--> DB[(Postgres)]
   U -- edits in browser --> D
@@ -32,13 +69,16 @@ flowchart LR
   CR[Free cron ping<br/>every 5 min] -- /cron/tick --> D
 ```
 
-1. **Claude writes.** The owner asks Claude for a quote. Claude calls `create_quote` with the content it wrote.
-2. **Dealflow stores and shows it.** The quote appears on the owner's dashboard, where every field can be edited.
-3. **The client acts.** The owner shares the public link (or Claude calls `send_quote`). The client opens it
-   (tracked), accepts with their name (recorded with a timestamp), and the quote becomes invoice `INV-000N` with the
-   owner's payment instructions. The client can click **I've paid** with a payment reference.
-4. **Dealflow follows up.** Claude writes a reminder sequence with `schedule_reminders`. Dealflow's scheduler emails
-   each one when it's due, and cancels the rest the moment the invoice is marked paid or the quote is declined.
+1. **Claude writes.** The freelancer asks Claude for a quote. Claude calls `create_quote` with the content it wrote,
+   optionally including its own cover email and reminder emails.
+2. **Dealflow sends it.** The quote is emailed to the client straight away and appears on the freelancer's dashboard,
+   where every field can be edited. The client's link always shows the latest version.
+3. **The client acts.** The client opens the link (tracked) and can accept with their name (recorded with a timestamp),
+   ask for changes, or decline. Accepting turns the quote into invoice `INV-000N` with the freelancer's payment
+   instructions. The client can then click **I've paid** with a payment reference and a screenshot.
+4. **Dealflow follows up.** Standard follow-ups go out 3, 7 and 14 days after sending (configurable), or Claude's own
+   reminder emails if it wrote them. They stop the moment the invoice is marked paid, the quote is declined or archived,
+   or the client asks for changes.
 5. **Claude reads it back.** "What's unpaid? Has Meesho opened it?" uses `list_quotes` / `get_quote`.
 
 ## MCP tools
@@ -137,6 +177,6 @@ automatically), `DEMO_EMAIL`, `DEMO_PASSWORD`, `DEMO_MCP_KEY`, `BREVO_API_KEY`, 
 - Free Render instances sleep after 15 minutes idle; the cron ping prevents this. Render's free Postgres expires
   after 30 days. Move to a paid plan or Neon for anything longer.
 - The connector URL is a bearer secret. Anyone with it can act on that account; it can be reset from the Connect page
-  (except on the shared demo account, which is pinned so reviewers can use it).
+  (except on the shared demo account, which is pinned so anyone can try it).
 - Amounts are stored per quote in that quote's currency; dashboards don't convert currencies.
 - One owner per account; no team roles yet.

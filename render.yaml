@@ -21,10 +21,10 @@ services:
         value: demo@dealflow.app
       - key: DEMO_PASSWORD
         value: demo1234
-      # Fixed so the shared test account's connector URL is stable: APP_URL/mcp/demo-volopay-7Qx2pLk9
+      # Fixed so the shared demo account's connector URL is stable: APP_URL/mcp/demo-dealflow-7Qx2pLk9
       - key: DEMO_MCP_KEY
-        value: demo-volopay-7Qx2pLk9
-      # Shown in the site footer and used as the test account's contact email
+        value: demo-dealflow-7Qx2pLk9
+      # Shown in the site footer and used as the demo account's contact email
       - key: CONTACT_EMAIL
         value: sauravanurag111@gmail.com
       - key: CRON_SECRET

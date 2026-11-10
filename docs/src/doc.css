@@ -42,3 +42,4 @@ body.compact .flow div { padding: 4pt 5pt; font-size: 8pt; }
 body.compact code { font-size: 7.8pt; word-break: normal; white-space: nowrap; }
 body.compact td code { white-space: normal; word-break: break-all; }
 body.compact table.tools td:first-child code { white-space: nowrap; word-break: normal; }
+sup { line-height: 0; font-size: 70%; }

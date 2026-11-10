@@ -27,7 +27,7 @@ export function layout({ title, user, body, active = '', flash, bare = false }) 
 <meta name="description" content="Quotes that turn into invoices and chase payment. Runs on your own Claude, with no AI inside.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="/style.css?v=6">
+<link rel="stylesheet" href="/style.css?v=7">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%235b47f5'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
 </head><body>
 ${bare ? '' : `<header class="topbar"><div class="wrap">
@@ -38,7 +38,7 @@ ${flash ? `<div class="flash ${esc(flash.type)}" role="status"${flash.type === '
 ${body}
 </div></main>
 <footer class="site"><b>Dealflow</b> · Your Claude does the writing. Dealflow keeps it live. No AI inside.${process.env.CONTACT_EMAIL ? `<br>Questions? <a href="mailto:${esc(process.env.CONTACT_EMAIL)}">${esc(process.env.CONTACT_EMAIL)}</a>` : ''}</footer>
-<script src="/app.js?v=6"></script>
+<script src="/app.js?v=7"></script>
 </body></html>`;
 }
 
@@ -94,10 +94,10 @@ export function landingPage({ user }) {
     body: `
 <section class="hero">
   <div>
-    <span class="eyebrow"><b>MCP</b> Runs on your own Claude · no AI inside</span>
+    <span class="eyebrow"><b>For freelancers</b> Runs on your own Claude · no AI inside</span>
     <h1>Tell Claude what you're charging. <span class="serif grad-text"><i>We'll get you paid.</i></span></h1>
-    <p class="lead">Describe the job in a sentence. Claude writes the quote, Dealflow sends it, your client accepts in one click,
-    and polite follow-ups keep going until the money lands.</p>
+    <p class="lead">You do the work. Dealflow handles the awkward part after it. Describe the job to Claude in a sentence:
+    Claude writes the quote, Dealflow sends it, your client accepts in one click, and polite follow-ups keep going until the money lands.</p>
     <div class="row">${cta}</div>
     <div class="trust"><span>Client needs no login</span><span>Reminders stop when paid</span><span>₹0 AI cost</span></div>
   </div>
@@ -122,6 +122,13 @@ export function landingPage({ user }) {
   </div>
 </section>
 
+<section class="stats reveal">
+  <div><b>61%</b><span>of Indian freelancers have gone unpaid at least once</span><a href="https://yourstory.com/2018/01/41pc-freelancers-witnessing-growth-2017-india-now-largest-freelancers-market-paypal-report" target="_blank" rel="noopener">PayPal India survey</a></div>
+  <div><b>2–4 wks</b><span>is how long many wait after invoicing to get paid</span><a href="https://yourstory.com/2018/01/41pc-freelancers-witnessing-growth-2017-india-now-largest-freelancers-market-paypal-report" target="_blank" rel="noopener">PayPal India survey</a></div>
+  <div><b>204 hrs</b><span>a year lost to admin and paperwork</span><a href="https://contentgrip.com/freelancer-admin-ai-gap" target="_blank" rel="noopener">Smallpdf survey</a></div>
+  <div><b>15M+</b><span>freelancers in India, second only to the US</span><a href="https://mediaindia.eu/?p=137926" target="_blank" rel="noopener">2024 estimate</a></div>
+</section>
+
 <h2 class="section-title reveal" id="how">From one sentence to <span class="serif grad-text"><i>paid</i></span></h2>
 <p class="section-sub reveal">Claude does the thinking and writing. Dealflow does everything that has to keep happening after the chat closes.</p>
 <section class="flow">
@@ -135,6 +142,13 @@ export function landingPage({ user }) {
   <div class="card reveal"><div class="ico">${ICON.spark}</div><h3>Why not just Claude?</h3><p class="muted">Claude can write the quote, but it can't host it, see that your client opened it, record their acceptance or send a reminder next Tuesday. Dealflow does.</p></div>
   <div class="card reveal"><div class="ico">${ICON.doc}</div><h3>Why not invoicing software?</h3><p class="muted">No forms. You describe the work in plain words, and your Claude writes a sharper quote than any template.</p></div>
   <div class="card reveal"><div class="ico">${ICON.zero}</div><h3>No AI bill</h3><p class="muted">There's no AI inside Dealflow. Your existing Claude plan does the writing, so we stay simple and cheap.</p></div>
+</section>
+
+<h2 class="section-title reveal">Made for people who <span class="serif grad-text"><i>sell their time</i></span></h2>
+<p class="section-sub reveal">When you're the whole company, every unpaid invoice is personal.</p>
+<section class="grid g2 feature" style="margin-top:18px">
+  <div class="card reveal"><span class="badge b-sent">Built for</span><h3 style="margin-top:12px">Freelancers</h3><p class="muted">Designers, developers, writers, marketers and consultants. Quote in a sentence, look professional, and never write another "just following up" email.</p></div>
+  <div class="card reveal"><span class="badge b-draft">Also great for</span><h3 style="margin-top:12px">Small business owners</h3><p class="muted">Studios, agencies and consultancies that send more quotes. Same flow, more volume, with team seats on the Studio plan.</p></div>
 </section>
 
 <section class="cta-band reveal">

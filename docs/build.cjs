@@ -1,11 +1,11 @@
-// Builds the submission PDFs from docs/src/*.html.
+// Builds the strategy and architecture PDFs from docs/src/*.html.
 // Usage: node docs/build.cjs https://your-app.onrender.com
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
 
 const appUrl = (process.argv[2] || 'https://YOUR-APP.onrender.com').replace(/\/$/, '');
-const mcpUrl = `${appUrl}/mcp/demo-volopay-7Qx2pLk9`;
+const mcpUrl = `${appUrl}/mcp/demo-dealflow-7Qx2pLk9`;
 const src = path.join(__dirname, 'src');
 const out = [
   ['strategy.html', 'Dealflow_Strategy.pdf'],
