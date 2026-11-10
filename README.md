@@ -59,14 +59,15 @@ writing, and Dealflow does everything that has to keep happening after the chat 
 
 ```mermaid
 flowchart LR
-  U[Freelancer] -- "Quote Meesho for a logo redesign..." --> C[Claude<br/>customer's own plan]
-  C -- MCP tools over HTTPS --> D[Dealflow server<br/>Node + Express]
-  D <--> DB[(Postgres)]
-  U -- edits in browser --> D
-  D -- public link /q/:id --> CL[Client<br/>no login]
-  CL -- Accept / I've paid --> D
-  D -- scheduled reminder emails --> E[Brevo email API] --> CL
-  CR[Free cron ping<br/>every 5 min] -- /cron/tick --> D
+  U["Freelancer"] -->|"Quote Meesho for a logo redesign"| C["Claude (customer's own plan)"]
+  C -->|"MCP tools over HTTPS"| D["Dealflow server (Node + Express)"]
+  D <--> DB[("Postgres")]
+  U -->|"Edits in browser"| D
+  D -->|"Public link /q/:id"| CL["Client, no login"]
+  CL -->|"Accept or I've paid"| D
+  D -->|"Scheduled reminder emails"| E["Brevo email API"]
+  E --> CL
+  CR["Free cron ping, every 5 min"] -->|"/cron/tick"| D
 ```
 
 1. **Claude writes.** The freelancer asks Claude for a quote. Claude calls `create_quote` with the content it wrote,
