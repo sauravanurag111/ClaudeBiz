@@ -48,7 +48,7 @@ const FLASH = {
 const flashFrom = (req) => {
   const f = FLASH[req.query.m];
   if (req.query.m === 'err' && req.query.e) return { type: 'err', text: String(req.query.e).slice(0, 200) };
-  return f ? { type: f[0], text: f[1] } : null;
+  return f ? { type: f[0], text: f[1], celebrate: ['accepted', 'clientpaid', 'paid'].includes(req.query.m) } : null;
 };
 
 app.use(express.static(path.join(here, '..', 'public'), { maxAge: '1h' }));

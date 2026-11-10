@@ -24,19 +24,56 @@ export function layout({ title, user, body, active = '', flash, bare = false }) 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <meta name="description" content="Quotes that turn into invoices and chase payment. Runs on your own Claude, with no AI inside.">
-<link rel="stylesheet" href="/style.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f46e5'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="/style.css?v=5">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%235b47f5'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
 </head><body>
 ${bare ? '' : `<header class="topbar"><div class="wrap">
 <a class="brand" href="${user ? '/app' : '/'}"><span class="logo">D</span>Dealflow</a>
 <nav class="nav">${nav}</nav></div></header>`}
 <main><div class="wrap">
-${flash ? `<div class="flash ${esc(flash.type)}">${esc(flash.text)}</div>` : ''}
+${flash ? `<div class="flash ${esc(flash.type)}" role="status"${flash.type === 'ok' ? ' data-autohide' : ''}${flash.celebrate ? ' data-celebrate' : ''}><div>${esc(flash.text)}</div><button class="x" type="button" aria-label="Dismiss" data-dismiss>×</button></div>` : ''}
 ${body}
 </div></main>
-<footer class="site">Dealflow · Your Claude does the writing. Dealflow keeps it live. No AI inside.</footer>
-<script src="/app.js"></script>
+<footer class="site"><b>Dealflow</b> · Your Claude does the writing. Dealflow keeps it live. No AI inside.</footer>
+<script src="/app.js?v=5"></script>
 </body></html>`;
+}
+
+const ICON = {
+  wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H5a2 2 0 0 1 0-4h13v4"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8L4 10.7l5 3.6L7.2 20 12 16.5 16.8 20 15 14.3l5-3.6-6.1-1.9z"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  zero: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>',
+};
+
+/** Draft → Sent → Viewed → Accepted → Paid, with the current step highlighted. */
+export function tracker(quote) {
+  const steps = [['sent', 'Sent'], ['viewed', 'Opened'], ['accepted', 'Accepted'], ['paid', 'Paid']];
+  const reached = {
+    sent: !!quote.sent_at || quote.view_count > 0 || ['sent', 'viewed', 'changes_requested', 'accepted', 'paid'].includes(quote.status),
+    viewed: quote.view_count > 0 || ['accepted', 'paid'].includes(quote.status),
+    accepted: ['accepted', 'paid'].includes(quote.status),
+    paid: quote.status === 'paid',
+  };
+  const declined = quote.status === 'declined';
+  let nowMarked = false;
+  const html = steps.map(([k, label], i) => {
+    const done = reached[k];
+    let cls = done ? 'done' : '';
+    if (!done && !nowMarked && !declined) { cls = 'now'; nowMarked = true; }
+    if (!done && declined && !nowMarked) { cls = 'bad'; nowMarked = true; label = 'Declined'; }
+    if (k === 'paid' && !done && quote.client_paid_at) label = 'Client says paid';
+    if (k === 'accepted' && !done && quote.status === 'changes_requested') label = 'Changes requested';
+    const bar = i ? `<span class="bar ${done ? 'done' : ''}"></span>` : '';
+    return `${bar}<span class="st ${cls}"><span class="dot">${done ? '✓' : cls === 'bad' ? '×' : ''}</span>${esc(label)}</span>`;
+  }).join('');
+  return `<div class="card tracker" aria-label="Progress">${html}</div>`;
 }
 
 function copyField(value, id) {
@@ -47,29 +84,62 @@ function copyField(value, id) {
 // ---------- Marketing & auth ----------
 
 export function landingPage({ user }) {
+  const cta = user
+    ? '<a class="btn primary lg" href="/app">Open your quotes →</a>'
+    : '<a class="btn primary lg" href="/signup">Start free →</a><a class="btn lg" href="/login">Try the demo</a>';
   return layout({
     title: 'Dealflow: quotes that get accepted and paid, written by your Claude',
     user,
     body: `
 <section class="hero">
-  <span class="badge b-sent">Works with your own Claude via MCP · No AI inside</span>
-  <h1 style="margin-top:14px">Tell Claude what you're charging. Dealflow gets you paid.</h1>
-  <p class="lead">Describe the job in Claude. It writes the quote, Dealflow gives your client a link to accept it in one click,
-  turns it into an invoice and sends Claude's follow-up emails until the money arrives.</p>
-  <div class="row" style="justify-content:center">
-    ${user ? '<a class="btn primary lg" href="/app">Open your quotes</a>' : '<a class="btn primary lg" href="/signup">Create free account</a><a class="btn lg" href="/login">Log in</a>'}
+  <div>
+    <span class="eyebrow"><b>MCP</b> Runs on your own Claude · no AI inside</span>
+    <h1>Tell Claude what you're charging. <span class="serif grad-text"><i>We'll get you paid.</i></span></h1>
+    <p class="lead">Describe the job in a sentence. Claude writes the quote, Dealflow sends it, your client accepts in one click,
+    and polite follow-ups keep going until the money lands.</p>
+    <div class="row">${cta}</div>
+    <div class="trust"><span>Client needs no login</span><span>Reminders stop when paid</span><span>₹0 AI cost</span></div>
+  </div>
+  <div class="demo" aria-hidden="true">
+    <div class="win">
+      <div class="win-bar"><i></i><i></i><i></i><span>Claude</span></div>
+      <div class="chat">
+        <div class="msg me">Quote Priya at Acme for a logo redesign, ₹40k + brand guidelines ₹15k, 18% GST, half upfront.</div>
+        <div class="msg ai">Done. I wrote the scope and terms and sent it with <code>create_quote</code>. Q-0001 is in Priya's inbox, and follow-ups are set for days 3, 7 and 14.</div>
+      </div>
+    </div>
+    <div class="quote-card">
+      <div class="top"><span class="num">Q-0001 · Acme Corp</span>
+        <span class="chips"><span class="badge b-sent">Sent</span><span class="badge b-viewed">Opened</span><span class="badge b-accepted">Accepted</span><span class="badge b-paid">Paid</span></span></div>
+      <div class="muted small">Logo redesign & brand guidelines</div>
+      <div class="amt">₹64,900</div>
+      <div class="ln"><span>Logo redesign · 3 concepts</span><span>₹40,000</span></div>
+      <div class="ln"><span>Brand guidelines</span><span>₹15,000</span></div>
+      <div class="ln"><span>GST 18%</span><span>₹9,900</span></div>
+    </div>
+    <div class="ping">Priya accepted your quote<small>Invoice INV-0001 issued · just now</small></div>
   </div>
 </section>
-<section id="how" class="flow">
-  <div class="card"><div class="n">1 · In Claude</div><h3>"Quote Acme for a logo redesign, 40k, half upfront"</h3><p class="muted small">Claude writes scope, line items and terms.</p></div>
-  <div class="card"><div class="n">2 · In Dealflow</div><h3>Quote appears, ready to edit</h3><p class="muted small">Tweak prices or wording, then share one link.</p></div>
-  <div class="card"><div class="n">3 · Your client</div><h3>Opens the link, clicks Accept</h3><p class="muted small">No login. It becomes an invoice with your payment details.</p></div>
-  <div class="card"><div class="n">4 · Until paid</div><h3>Reminders go out on schedule</h3><p class="muted small">Written by Claude, sent by Dealflow, stopped the moment you're paid.</p></div>
+
+<h2 class="section-title reveal" id="how">From one sentence to <span class="serif grad-text"><i>paid</i></span></h2>
+<p class="section-sub reveal">Claude does the thinking and writing. Dealflow does everything that has to keep happening after the chat closes.</p>
+<section class="flow">
+  <div class="card reveal"><div class="n grad-text">01 · In Claude</div><h3>"Quote Acme for a logo redesign, 40k, half upfront"</h3><p class="muted small">Claude writes the scope, line items, terms and the cover email.</p></div>
+  <div class="card reveal"><div class="n grad-text">02 · Sent for you</div><h3>Lands in your client's inbox</h3><p class="muted small">You can tweak anything in Dealflow; the link always shows the latest version.</p></div>
+  <div class="card reveal"><div class="n grad-text">03 · Your client</div><h3>Opens, accepts or asks for changes</h3><p class="muted small">No login. Accepting turns it into an invoice with your payment details.</p></div>
+  <div class="card reveal"><div class="n grad-text">04 · Until paid</div><h3>Follow-ups on autopilot</h3><p class="muted small">Gentle, then firmer. They stop the moment the client pays.</p></div>
 </section>
-<section class="grid g3" style="margin-top:16px">
-  <div class="card"><h3>Why not just Claude?</h3><p class="muted">Claude can write a quote, but it can't host it, see that your client opened it, record their acceptance, or send a reminder next Tuesday. Dealflow does.</p></div>
-  <div class="card"><h3>Why not invoicing software?</h3><p class="muted">No forms to fill. You describe the work in plain words and your Claude writes a better quote than a template would.</p></div>
-  <div class="card"><h3>No AI bill</h3><p class="muted">Dealflow has no AI inside. Your existing Claude plan does the writing, so we stay cheap: one flat price.</p></div>
+
+<section class="grid g3 feature" style="margin-top:16px">
+  <div class="card reveal"><div class="ico">${ICON.spark}</div><h3>Why not just Claude?</h3><p class="muted">Claude can write the quote, but it can't host it, see that your client opened it, record their acceptance or send a reminder next Tuesday. Dealflow does.</p></div>
+  <div class="card reveal"><div class="ico">${ICON.doc}</div><h3>Why not invoicing software?</h3><p class="muted">No forms. You describe the work in plain words, and your Claude writes a sharper quote than any template.</p></div>
+  <div class="card reveal"><div class="ico">${ICON.zero}</div><h3>No AI bill</h3><p class="muted">There's no AI inside Dealflow. Your existing Claude plan does the writing, so we stay simple and cheap.</p></div>
+</section>
+
+<section class="cta-band reveal">
+  <h2>Stop chasing. <span class="serif"><i>Start closing.</i></span></h2>
+  <p>Connect Claude in a minute. Your first three quotes are free.</p>
+  ${user ? '<a class="btn lg" href="/app">Open your quotes →</a>' : '<a class="btn lg" href="/signup">Create your free account →</a>'}
 </section>`,
   });
 }
@@ -80,8 +150,10 @@ export function authPage({ mode, error, values = {}, next = '', demo }) {
     title: isLogin ? 'Log in · Dealflow' : 'Create account · Dealflow',
     user: null,
     flash: error ? { type: 'err', text: error } : null,
-    body: `<div class="card" style="max-width:420px;margin:20px auto">
-<h1>${isLogin ? 'Log in' : 'Create your account'}</h1>
+    body: `<div class="card auth">
+<div class="logo" style="width:40px;height:40px;border-radius:12px;font-size:18px;margin-bottom:16px">D</div>
+<h1>${isLogin ? 'Welcome back' : 'Create your account'}</h1>
+<p class="muted" style="margin-top:-6px">${isLogin ? 'Log in to see your quotes and invoices.' : 'Free to start. Connect your Claude next.'}</p>
 <form method="post" action="/${mode}">
   <input type="hidden" name="next" value="${esc(next)}">
   ${isLogin ? '' : `<div class="field"><label>Your name</label><input type="text" name="name" required value="${esc(values.name)}"></div>
@@ -91,12 +163,25 @@ export function authPage({ mode, error, values = {}, next = '', demo }) {
   <button class="btn primary block" type="submit">${isLogin ? 'Log in' : 'Create account'}</button>
 </form>
 <p class="muted small" style="margin-top:14px">${isLogin ? 'New here? <a href="/signup">Create an account</a>' : 'Already have an account? <a href="/login">Log in</a>'}</p>
-${isLogin && demo ? `<div class="flash info small" style="margin:12px 0 0">Test account: <b>${esc(demo.email)}</b> / <b>${esc(demo.password)}</b></div>` : ''}
+${isLogin && demo ? `<div class="flash info small" style="margin:12px 0 0;animation:none"><div>Test account: <b>${esc(demo.email)}</b> / <b>${esc(demo.password)}</b> <button type="button" class="btn sm" style="margin-left:6px" data-fill-demo="${esc(demo.email)}|${esc(demo.password)}">Fill in</button></div></div>` : ''}
 </div>`,
   });
 }
 
 // ---------- Owner dashboard ----------
+
+function greeting() {
+  const h = Number(new Date().toLocaleString('en-GB', { hour: 'numeric', hour12: false, timeZone: process.env.DISPLAY_TZ || 'Asia/Kolkata' }));
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}
+
+/** data-count attributes so the browser can animate a single-currency total counting up. */
+function countAttr(rows) {
+  const cur = [...new Set(rows.map((r) => r.currency))];
+  if (cur.length !== 1) return '';
+  const total = rows.reduce((sum, r) => sum + totals(r).total, 0);
+  return ` data-count="${total}" data-currency="${esc(cur[0])}"`;
+}
 
 function sumByCurrency(rows) {
   const m = {};
@@ -135,7 +220,7 @@ export function dashboardPage({ user, quotes, archived = [], archivedCount = 0, 
             : quotes.filter((x) => x.status === filter);
   const rows = shown.map((x) => `<tr class="click" data-href="/app/quotes/${x.id}">
   <td><a href="/app/quotes/${x.id}"><b>${esc(docNumber(x))}</b></a></td>
-  <td>${esc(x.title)}<div class="muted small">${esc(x.client_company || x.client_name)}</div></td>
+  <td><span class="cell-title">${esc(x.title)}</span><div class="muted small">${esc(x.client_company || x.client_name)}</div></td>
   <td>${badge(displayStatus(x))}${x.view_count ? `<div class="muted small">opened ${x.view_count}×</div>` : ''}</td>
   <td class="num">${esc(money(totals(x).total, x.currency))}</td>
   <td class="muted small">${x.status === 'accepted' && x.due_date ? `Due ${esc(fmtDate(x.due_date))}` : esc(fmtDate(x.created_at))}</td>
@@ -148,23 +233,23 @@ export function dashboardPage({ user, quotes, archived = [], archivedCount = 0, 
     active: 'dash',
     flash,
     body: `
-<div class="row" style="margin-bottom:18px"><h1 style="margin:0">Quotes & invoices</h1><span class="spacer"></span>
+<div class="page-head"><div><h1>${greeting()}, ${esc((user.name || '').split(' ')[0] || 'there')}</h1><div class="sub">Here's where your money is.</div></div><span class="spacer"></span>
 <form class="inline" method="post" action="/app/quotes/new"><button class="btn" type="submit">+ Blank quote</button></form>
-<a class="btn primary" href="/app/connect">Create from Claude</a></div>
+<a class="btn primary" href="/app/connect">${ICON.spark.replace('<svg', '<svg width="16" height="16"')} Create from Claude</a></div>
 <div class="grid g4" style="margin-bottom:18px">
-  <div class="card kpi"><div class="label">Awaiting payment</div><div class="value">${esc(sumByCurrency(awaiting))}</div><div class="muted small">${awaiting.length} invoice(s)${clientPaid.length ? `, ${clientPaid.length} marked paid by client` : ''}</div></div>
-  <div class="card kpi"><div class="label">Paid</div><div class="value">${esc(sumByCurrency(paid))}</div><div class="muted small">${paid.length} invoice(s)</div></div>
-  <div class="card kpi"><div class="label">Open quotes</div><div class="value">${open.length}</div><div class="muted small">${esc(sumByCurrency(open))}</div></div>
-  <div class="card kpi"><div class="label">Reminders scheduled</div><div class="value">${scheduledCount}</div><div class="muted small">sent automatically</div></div>
+  <div class="card kpi k-pay"><div class="icon">${ICON.clock}</div><div class="label">Awaiting payment</div><div class="value"${countAttr(awaiting)}>${esc(sumByCurrency(awaiting))}</div><div class="muted small">${awaiting.length} invoice(s)${clientPaid.length ? `, ${clientPaid.length} marked paid by client` : ''}</div></div>
+  <div class="card kpi k-paid"><div class="icon">${ICON.wallet}</div><div class="label">Paid</div><div class="value"${countAttr(paid)}>${esc(sumByCurrency(paid))}</div><div class="muted small">${paid.length} invoice(s)</div></div>
+  <div class="card kpi"><div class="icon">${ICON.doc}</div><div class="label">Open quotes</div><div class="value" data-count="${open.length}">${open.length}</div><div class="muted small">${esc(sumByCurrency(open))}</div></div>
+  <div class="card kpi k-rem"><div class="icon">${ICON.bell}</div><div class="label">Reminders scheduled</div><div class="value" data-count="${scheduledCount}">${scheduledCount}</div><div class="muted small">sent automatically</div></div>
 </div>
 <div class="card">
   <div class="row" style="margin-bottom:8px">${filters.map(([k, label]) => `<a class="btn sm ${filter === k ? 'primary' : ''}" href="/app?status=${k}">${label}</a>`).join('')}</div>
-  ${nothing ? `<div class="empty"><h2>No quotes yet</h2><p>Connect Claude, then ask it something like:</p>
-  <div class="prompt" style="max-width:560px;margin:0 auto 16px">"Create a Dealflow quote for Priya at Acme Corp (your-email@example.com) for a logo redesign: 3 concepts, 2 revision rounds, ₹40,000, 18% GST, 50% upfront."</div>
+  ${nothing ? `<div class="empty"><div class="orb">${ICON.spark.replace('<svg', '<svg width="28" height="28"')}</div><h2>No quotes yet</h2><p>Connect Claude, then ask it something like:</p>
+  <div class="prompt" style="max-width:560px;margin:0 auto 16px;text-align:left" data-copy-text>"Create a Dealflow quote for Priya at Acme Corp (your-email@example.com) for a logo redesign: 3 concepts, 2 revision rounds, ₹40,000, 18% GST, 50% upfront."</div>
   <p class="small">Dealflow emails it to the client right away and schedules follow-ups automatically.</p>
   <a class="btn primary" href="/app/connect">Connect Claude</a></div>`
     : shown.length === 0 ? '<div class="empty">Nothing here.</div>'
-      : `<div class="table-scroll"><table><thead><tr><th>Number</th><th>Project</th><th>Status</th><th class="num">Total</th><th>Date</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table></div>`}
+      : `<div class="table-scroll"><table><thead><tr><th>Number</th><th>Project</th><th>Status</th><th class="num">Total</th><th>Date</th><th class="actions">Actions</th></tr></thead><tbody>${rows}</tbody></table></div>`}
 </div>`,
   });
 }
@@ -218,6 +303,7 @@ export function quoteEditPage({ user, quote, reminders, events, flash, emailOn }
   <span class="spacer"></span>${statusActions.join('')}
   <a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener">View client page ↗</a>
 </div>
+${tracker(quote)}
 ${quote.status === 'changes_requested' && quote.change_request ? `<div class="flash info"><b>${esc(quote.client_name || 'Your client')} requested changes</b> (${esc(fmtDateTime(quote.change_requested_at))}):<div class="prewrap" style="margin-top:4px;font-weight:400">${esc(quote.change_request)}</div><div class="small" style="margin-top:6px;font-weight:400">Edit below (or ask Claude to), save, then click <b>Email link</b> to send the revised quote. Reminders are paused until you do.</div></div>` : ''}
 ${quote.status === 'accepted' && quote.client_paid_at ? `<div class="flash info"><b>${esc(quote.client_name || 'Your client')} marked this invoice as paid</b> on ${esc(fmtDateTime(quote.client_paid_at))}.${quote.client_paid_note ? ` Reference: <b>${esc(quote.client_paid_note)}</b>.` : ''}${quote.paid_proof_mime ? ` <a href="/app/quotes/${quote.id}/proof" target="_blank" rel="noopener">View payment screenshot ↗</a>` : ''} <span style="font-weight:400">Check your account, then click <b>Confirm paid</b>.</span></div>` : ''}
 <div class="split">
@@ -282,7 +368,7 @@ Thanks,
   </div>
   <div class="card">
     <h3>Activity</h3>
-    <ul class="timeline">${events.map((e) => `<li><span class="who">${esc(e.actor)}</span> ${esc(e.message)}<div class="muted">${esc(fmtDateTime(e.created_at))}</div></li>`).join('')}</ul>
+    <ul class="timeline">${events.map((e) => `<li class="${e.actor === 'Client' ? 'client' : e.actor === 'Claude' ? 'claude' : ''}"><span class="who">${esc(e.actor)}</span> ${esc(e.message)}<div class="muted">${esc(fmtDateTime(e.created_at))}</div></li>`).join('')}</ul>
   </div>
 </aside>
 </div>`,
@@ -319,10 +405,10 @@ export function connectPage({ user, mcpUrl, flash, demo }) {
 <div class="card">
   <h3>Try asking Claude</h3>
   <div class="stack">
-    <div class="prompt">"Create a Dealflow quote for Priya at Acme Corp (priya@acme.com): logo redesign with 3 concepts and 2 revision rounds for ₹40,000, plus brand guidelines for ₹15,000. 18% GST, 50% upfront."</div>
-    <div class="prompt">"Schedule 3 reminders for that quote: a friendly nudge in 3 days, a follow-up in 7, and a firm one in 14."</div>
-    <div class="prompt">"Which of my Dealflow invoices are unpaid? Has Acme opened theirs?"</div>
-    <div class="prompt">"Acme paid. Mark Q-0001 paid."</div>
+    <div class="prompt" data-copy-text>"Create a Dealflow quote for Priya at Acme Corp (priya@acme.com): logo redesign with 3 concepts and 2 revision rounds for ₹40,000, plus brand guidelines for ₹15,000. 18% GST, 50% upfront."</div>
+    <div class="prompt" data-copy-text>"Schedule 3 reminders for that quote: a friendly nudge in 3 days, a follow-up in 7, and a firm one in 14."</div>
+    <div class="prompt" data-copy-text>"Which of my Dealflow invoices are unpaid? Has Acme opened theirs?"</div>
+    <div class="prompt" data-copy-text>"Acme paid. Mark Q-0001 paid."</div>
   </div>
 </div>
 ${demo ? '' : `<div class="card">
@@ -354,8 +440,8 @@ export function settingsPage({ user, flash }) {
     <div class="field"><label>Default currency</label><input type="text" name="currency" maxlength="3" value="${esc(user.currency)}"></div>
   </div>
   <h3 style="margin-top:6px">Automatic follow-up</h3>
-  <label style="display:flex;gap:8px;align-items:center;font-weight:500;margin-bottom:8px"><input type="checkbox" name="auto_send" ${user.auto_send ? 'checked' : ''}> Email new quotes from Claude to the client straight away</label>
-  <label style="display:flex;gap:8px;align-items:center;font-weight:500;margin-bottom:8px"><input type="checkbox" name="auto_reminders" ${user.auto_reminders ? 'checked' : ''}> Schedule standard follow-up reminders after sending</label>
+  <label class="check"><input type="checkbox" name="auto_send" ${user.auto_send ? 'checked' : ''}> Email new quotes from Claude to the client straight away</label>
+  <label class="check"><input type="checkbox" name="auto_reminders" ${user.auto_reminders ? 'checked' : ''}> Schedule standard follow-up reminders after sending</label>
   <div class="field" style="max-width:260px"><label>Follow-up days after sending</label><input type="text" name="reminder_days" value="${esc(user.reminder_days)}" placeholder="3,7,14"><div class="hint">Comma-separated, up to 5. If Claude writes custom reminders, they replace these.</div></div>
   <div class="field"><label>Payment instructions</label><textarea name="payment_instructions" rows="4" placeholder="UPI ID, bank account, payment link...">${esc(user.payment_instructions)}</textarea>
   <div class="hint">Shown on invoices after your client accepts.</div></div>
@@ -400,7 +486,7 @@ export function publicQuotePage({ quote, owner, viewer, flash }) {
 </form></details></div>`;
   } else if (quote.status === 'accepted') {
     actions = `<div class="card"><h2>Pay ${esc(money(t.total, cur))}${quote.due_date ? ` by ${esc(fmtDate(quote.due_date))}` : ''}</h2>
-${owner.payment_instructions ? `<div class="prewrap" style="background:var(--bg);padding:12px;border-radius:9px">${esc(owner.payment_instructions)}</div>` : `<p class="muted">Contact ${esc(owner.business_name || owner.name)} at ${esc(owner.email)} for payment details.</p>`}
+${owner.payment_instructions ? `<div class="prewrap pay-box">${esc(owner.payment_instructions)}</div>` : `<p class="muted">Contact ${esc(owner.business_name || owner.name)} at ${esc(owner.email)} for payment details.</p>`}
 ${quote.client_paid_at ? `<p class="flash ok" style="margin:14px 0 0">Thanks! You told us you paid on ${esc(fmtDate(quote.client_paid_at))}. ${esc(owner.business_name || owner.name)} will confirm shortly.</p>`
     : `<form method="post" action="/q/${esc(quote.public_id)}/paid" style="margin-top:14px" data-proof-form>
   <h3 style="margin-bottom:8px">Already paid? Let ${esc(owner.business_name || owner.name)} know</h3>
@@ -423,9 +509,10 @@ ${quote.client_paid_at ? `<p class="flash ok" style="margin:14px 0 0">Thanks! Yo
     flash,
     body: `<div class="doc">
 ${isOwner ? `<div class="flash info no-print">You're viewing your client's page. Your own visits aren't counted as client views. <a href="/app/quotes/${quote.id}">Edit</a></div>` : ''}
+<div class="no-print">${tracker(quote)}</div>
 <div class="paper">
   <div class="doc-head">
-    <div><div class="doc-title">${kind}</div><div class="from">${esc(owner.business_name || owner.name)}</div>
+    <div><div class="doc-title grad-text">${kind}</div><div class="from">${esc(owner.business_name || owner.name)}</div>
       <div class="muted small prewrap">${esc(owner.business_address)}</div>
       ${owner.tax_id ? `<div class="muted small">Tax ID: ${esc(owner.tax_id)}</div>` : ''}</div>
     <div class="meta">
