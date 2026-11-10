@@ -62,6 +62,20 @@ app.use(loadUser);
 
 app.get('/healthz', (_req, res) => res.json({ ok: true }));
 
+// Public copies of the product documents (strategy, architecture, economics).
+const DOCS = {
+  'strategy.pdf': ['Dealflow_Strategy.pdf', 'application/pdf'],
+  'architecture.pdf': ['Dealflow_Architecture.pdf', 'application/pdf'],
+  'economics.xlsx': ['Dealflow_Economics.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+};
+app.get('/docs/:name', (req, res, next) => {
+  const doc = DOCS[req.params.name];
+  if (!doc) return next();
+  res.set('Content-Type', doc[1]);
+  res.set('Content-Disposition', `${doc[1] === 'application/pdf' ? 'inline' : 'attachment'}; filename="${doc[0]}"`);
+  res.sendFile(path.join(here, '..', 'docs', doc[0]));
+});
+
 // Called by an external free cron (e.g. cron-job.org) so reminders go out even if the host sleeps.
 app.all('/cron/tick', async (req, res) => {
   const expected = String(process.env.CRON_SECRET || '').trim();

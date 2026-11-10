@@ -17,8 +17,11 @@ click, turns the accepted quote into an invoice, and keeps sending polite follow
 
 ## Documents
 
-[Business strategy](docs/Dealflow_Strategy.pdf) · [Architecture & implementation notes](docs/Dealflow_Architecture.pdf) ·
-[Unit economics model](docs/Dealflow_Economics.xlsx)
+| Document | Open in browser | File in this repo |
+|---|---|---|
+| Business strategy | [dealflow-2vnc.onrender.com/docs/strategy.pdf](https://dealflow-2vnc.onrender.com/docs/strategy.pdf) | [docs/Dealflow_Strategy.pdf](docs/Dealflow_Strategy.pdf) |
+| Architecture & implementation notes | [dealflow-2vnc.onrender.com/docs/architecture.pdf](https://dealflow-2vnc.onrender.com/docs/architecture.pdf) | [docs/Dealflow_Architecture.pdf](docs/Dealflow_Architecture.pdf) |
+| Unit economics model (Excel) | [dealflow-2vnc.onrender.com/docs/economics.xlsx](https://dealflow-2vnc.onrender.com/docs/economics.xlsx) | [docs/Dealflow_Economics.xlsx](docs/Dealflow_Economics.xlsx) |
 
 ## Who it's for, and why freelancers first
 
