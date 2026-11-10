@@ -260,12 +260,14 @@ owner.post('/settings', async (req, res) => {
   const b = req.body;
   await one(
     `UPDATE users SET name = $2, business_name = $3, business_address = $4, tax_id = $5,
-       currency = $6, payment_instructions = $7, auto_send = $8, auto_reminders = $9, reminder_days = $10
+       currency = $6, payment_instructions = $7, auto_send = $8, auto_reminders = $9, reminder_days = $10,
+       contact_email = $11
      WHERE id = $1 RETURNING id`,
     [req.user.id, b.name || '', b.business_name || '', b.business_address || '', b.tax_id || '',
       (b.currency || 'INR').trim().toUpperCase().slice(0, 3), b.payment_instructions || '',
       b.auto_send === 'on', b.auto_reminders === 'on',
-      String(b.reminder_days || '3,7,14').split(',').map((d) => parseInt(d, 10)).filter((d) => d > 0 && d <= 365).slice(0, 5).join(',') || '3,7,14']);
+      String(b.reminder_days || '3,7,14').split(',').map((d) => parseInt(d, 10)).filter((d) => d > 0 && d <= 365).slice(0, 5).join(',') || '3,7,14',
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(b.contact_email || '').trim()) ? String(b.contact_email).trim().toLowerCase() : '']);
   res.redirect('/app/settings?m=saved');
 });
 

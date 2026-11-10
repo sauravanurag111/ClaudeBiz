@@ -85,7 +85,7 @@ export function buildMcpServer(user) {
     return ok({
       business_name: user.business_name,
       owner_name: user.name,
-      email: user.email,
+      email: user.contact_email || user.email,
       address: user.business_address,
       tax_id: user.tax_id,
       default_currency: user.currency,

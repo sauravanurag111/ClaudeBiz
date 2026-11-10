@@ -2,6 +2,7 @@ import {
   STATUS_LABEL, totals, money, fmtDate, fmtDateTime, isoDate, quoteNumber, invoiceNumber, docNumber,
   isInvoice, publicUrl, baseUrl, fillTemplate, displayStatus, OPEN_STATUSES,
 } from './quotes.js';
+import { contactEmail } from './auth.js';
 
 export function esc(value) {
   return String(value ?? '')
@@ -36,7 +37,7 @@ ${bare ? '' : `<header class="topbar"><div class="wrap">
 ${flash ? `<div class="flash ${esc(flash.type)}" role="status"${flash.type === 'ok' ? ' data-autohide' : ''}${flash.celebrate ? ' data-celebrate' : ''}><div>${esc(flash.text)}</div><button class="x" type="button" aria-label="Dismiss" data-dismiss>×</button></div>` : ''}
 ${body}
 </div></main>
-<footer class="site"><b>Dealflow</b> · Your Claude does the writing. Dealflow keeps it live. No AI inside.</footer>
+<footer class="site"><b>Dealflow</b> · Your Claude does the writing. Dealflow keeps it live. No AI inside.${process.env.CONTACT_EMAIL ? `<br>Questions? <a href="mailto:${esc(process.env.CONTACT_EMAIL)}">${esc(process.env.CONTACT_EMAIL)}</a>` : ''}</footer>
 <script src="/app.js?v=6"></script>
 </body></html>`;
 }
@@ -474,6 +475,8 @@ export function settingsPage({ user, flash }) {
     <div class="field"><label>Business name</label><input type="text" name="business_name" value="${esc(user.business_name)}"></div>
   </div>
   <div class="field"><label>Address</label><textarea name="business_address" rows="3">${esc(user.business_address)}</textarea></div>
+  <div class="field"><label>Contact email</label><input type="email" name="contact_email" value="${esc(user.contact_email)}" placeholder="${esc(user.email)}">
+  <div class="hint">Shown to clients on the Contact button, used as reply-to on emails, and where Dealflow sends you alerts. Blank = your login email.</div></div>
   <div class="grid g2">
     <div class="field"><label>Tax ID (GSTIN / VAT)</label><input type="text" name="tax_id" value="${esc(user.tax_id)}"></div>
     <div class="field"><label>Default currency</label><input type="text" name="currency" maxlength="3" value="${esc(user.currency)}"></div>
@@ -525,7 +528,7 @@ export function publicQuotePage({ quote, owner, viewer, flash }) {
 </form></details></div>`;
   } else if (quote.status === 'accepted') {
     actions = `<div class="card"><h2>Pay ${esc(money(t.total, cur))}${quote.due_date ? ` by ${esc(fmtDate(quote.due_date))}` : ''}</h2>
-${owner.payment_instructions ? `<div class="prewrap pay-box">${esc(owner.payment_instructions)}</div>` : `<p class="muted">Contact ${esc(owner.business_name || owner.name)} at ${esc(owner.email)} for payment details.</p>`}
+${owner.payment_instructions ? `<div class="prewrap pay-box">${esc(owner.payment_instructions)}</div>` : `<p class="muted">Contact ${esc(owner.business_name || owner.name)} at <a href="mailto:${esc(contactEmail(owner))}">${esc(contactEmail(owner))}</a> for payment details.</p>`}
 ${quote.client_paid_at ? `<p class="flash ok" style="margin:14px 0 0">Thanks! You told us you paid on ${esc(fmtDate(quote.client_paid_at))}. ${esc(owner.business_name || owner.name)} will confirm shortly.</p>`
     : `<form method="post" action="/q/${esc(quote.public_id)}/paid" style="margin-top:14px" data-proof-form>
   <h3 style="margin-bottom:8px">Already paid? Let ${esc(owner.business_name || owner.name)} know</h3>
@@ -584,7 +587,7 @@ ${isOwner ? `<div class="flash info no-print">You're viewing your client's page.
 </div>
 <div class="action-bar stack">${actions}
 <div class="row no-print" style="justify-content:center"><button class="btn sm" type="button" onclick="window.print()">Download / print PDF</button>
-<a class="btn sm" href="mailto:${esc(owner.email)}?subject=${encodeURIComponent(`${docNumber(quote)}: ${quote.title}`)}">Contact ${esc(owner.business_name || owner.name)}</a></div>
+<a class="btn sm" title="${esc(contactEmail(owner))}" href="mailto:${esc(contactEmail(owner))}?subject=${encodeURIComponent(`${docNumber(quote)}: ${quote.title}`)}">Contact ${esc(owner.business_name || owner.name)}</a></div>
 </div></div>`,
   });
 }

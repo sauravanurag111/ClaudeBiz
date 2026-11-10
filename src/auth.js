@@ -93,6 +93,10 @@ export async function ensureDemoUser() {
   if (existing) {
     await one('UPDATE users SET password_hash = $2, mcp_key = COALESCE($3, mcp_key) WHERE id = $1 RETURNING id',
       [existing.id, hashPassword(password), fixedKey || null]);
+    if (process.env.CONTACT_EMAIL) {
+      await one(`UPDATE users SET contact_email = $2 WHERE id = $1 AND contact_email = '' RETURNING id`,
+        [existing.id, process.env.CONTACT_EMAIL]);
+    }
     // One-time rename of the original demo identity; later edits in Settings are kept.
     await one(
       `UPDATE users SET name = 'Anurag', business_name = 'Meesho', business_address = 'Bengaluru, India',
@@ -102,11 +106,15 @@ export async function ensureDemoUser() {
   }
   const user = await createUser({ email, password, name: 'Anurag', businessName: 'Meesho' });
   if (fixedKey) await one('UPDATE users SET mcp_key = $2 WHERE id = $1 RETURNING id', [user.id, fixedKey]);
+  if (process.env.CONTACT_EMAIL) await one('UPDATE users SET contact_email = $2 WHERE id = $1 RETURNING id', [user.id, process.env.CONTACT_EMAIL]);
   await one(
     `UPDATE users SET business_address = $2, payment_instructions = $3 WHERE id = $1 RETURNING id`,
     [user.id, 'Bengaluru, India', 'UPI: anurag@upi (sample details for the demo account)'],
   );
   console.log(`Created demo account ${email}`);
 }
+
+/** Where clients and notifications reach this business: the contact email if set, else the login email. */
+export const contactEmail = (user) => (user && (user.contact_email || user.email)) || '';
 
 export const isDemoUser = (user) => !!process.env.DEMO_EMAIL && user?.email === process.env.DEMO_EMAIL.toLowerCase();

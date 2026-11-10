@@ -3,6 +3,7 @@ import {
   fillTemplate, logEvent, publicUrl, editUrl, docNumber, totals, money, markSent, addReminders, defaultReminders,
 } from './quotes.js';
 import { esc } from './views.js';
+import { contactEmail } from './auth.js';
 
 /**
  * Email delivery. Uses Brevo's transactional email API when BREVO_API_KEY is set
@@ -36,7 +37,7 @@ export async function sendEmail({ to, toName, subject, text, html, user }) {
     body: JSON.stringify({
       sender: { email: process.env.SENDER_EMAIL, name: user.business_name || user.name || 'Dealflow' },
       to: [{ email: to, name: toName || to }],
-      replyTo: { email: user.email, name: user.name || user.business_name || user.email },
+      replyTo: { email: contactEmail(user), name: user.name || user.business_name || contactEmail(user) },
       subject,
       textContent: text,
       htmlContent: html,
@@ -103,7 +104,7 @@ export async function notifyOwner(quote, subject, text) {
     const user = await one('SELECT * FROM users WHERE id = $1', [quote.user_id]);
     if (!user || emailMode() !== 'email') return;
     await sendEmail({
-      to: user.email, toName: user.name, subject, user,
+      to: contactEmail(user), toName: user.name, subject, user,
       text: `${text}\n\nOpen in Dealflow: ${editUrl(quote)}`,
       html: `<p style="font-family:Arial,sans-serif;font-size:15px">${esc(text).replace(/\n/g, '<br>')}</p>
 <p><a href="${editUrl(quote)}" style="font-family:Arial,sans-serif">Open ${esc(docNumber(quote))} in Dealflow</a></p>`,
