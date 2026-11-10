@@ -1,6 +1,11 @@
+@font-face { font-family: 'Inter Static'; font-style: normal; font-weight: 400; src: url(fonts/Inter-Regular.woff2) format('woff2'); }
+@font-face { font-family: 'Inter Static'; font-style: normal; font-weight: 600; src: url(fonts/Inter-SemiBold.woff2) format('woff2'); }
+@font-face { font-family: 'Inter Static'; font-style: normal; font-weight: 700; src: url(fonts/Inter-Bold.woff2) format('woff2'); }
+@font-face { font-family: 'Inter Static'; font-style: normal; font-weight: 800; src: url(fonts/Inter-ExtraBold.woff2) format('woff2'); }
+@font-face { font-family: 'Inter Static'; font-style: italic; font-weight: 400; src: url(fonts/Inter-Italic.woff2) format('woff2'); }
 @page { size: A4; margin: 11mm 13mm; }
 * { box-sizing: border-box; }
-body { font: 10pt/1.42 Inter, "Segoe UI", Roboto, Arial, sans-serif; color: #17171f; margin: 0; }
+body { font: 10pt/1.42 "Inter Static", "Liberation Sans", Arial, sans-serif; color: #17171f; margin: 0; }
 h1 { font-size: 20pt; margin: 0 0 2pt; letter-spacing: -.02em; }
 h2 { font-size: 12.5pt; margin: 12pt 0 5pt; color: #4f46e5; }
 h3 { font-size: 10.5pt; margin: 8pt 0 3pt; }
