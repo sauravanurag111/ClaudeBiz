@@ -9,9 +9,9 @@ accepted quote into an invoice, and sends Claude-written payment reminders on sc
 
 | | |
 |---|---|
-| Live app | `APP_URL` (set after deploy, see [Deploy](#deploy-render-free)) |
+| Live app | https://dealflow-2vnc.onrender.com |
 | Test login | `demo@dealflow.app` / `demo1234` |
-| MCP connector URL | `APP_URL/mcp/<key>`: shown on the **Connect Claude** page after logging in |
+| MCP connector URL (test account) | `https://dealflow-2vnc.onrender.com/mcp/demo-volopay-7Qx2pLk9` (your own account's URL is on the **Connect Claude** page) |
 
 ## Submission documents
 
