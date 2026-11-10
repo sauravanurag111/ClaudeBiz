@@ -1,0 +1,29 @@
+{
+  "name": "dealflow",
+  "version": "1.0.0",
+  "description": "Quotes that turn into invoices and chase payment. Runs on your own Claude via MCP, with no AI inside.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sauravanurag111/ClaudeBiz.git"
+  },
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/sauravanurag111/ClaudeBiz/issues"
+  },
+  "homepage": "https://github.com/sauravanurag111/ClaudeBiz#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "express": "^5.3.0",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  }
+}
