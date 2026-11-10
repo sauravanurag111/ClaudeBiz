@@ -23,7 +23,7 @@ written by the customer's own Claude, with no AI inside our app.</div>
 
 <h2>The solution, and why people need it on top of Claude</h2>
 <div class="flow">
-<div><b>1 · Claude writes</b>"Quote Acme for a logo redesign, ₹40k, half upfront." Scope, items, terms.</div>
+<div><b>1 · Claude writes</b>"Quote Meesho for a logo redesign, ₹40k, half upfront." Scope, items, terms.</div>
 <div><b>2 · Dealflow stores</b>Quote lands in the dashboard. Owner edits anything.</div>
 <div><b>3 · Client acts</b>Opens a public link and accepts in one click. It becomes an invoice.</div>
 <div><b>4 · Until paid</b>Claude-written reminders go out on schedule and stop when paid.</div>
@@ -87,13 +87,13 @@ that send quotes too.</p>
 <tr><td><code>update_quote</code></td><td>Apply changes ("add a 10% discount", "split the logo into 2 phases").</td></tr>
 <tr><td><code>send_quote</code></td><td>Email the client the link, with a message Claude writes.</td></tr>
 <tr><td><code>schedule_reminders</code></td><td>Queue a reminder sequence it writes, from polite to firm, with placeholders like <code>{{amount}}</code> that Dealflow fills in.</td></tr>
-<tr><td><code>list_quotes</code><br><code>get_quote</code></td><td>Answer "What's unpaid? Did Acme open it?" with live status, views, acceptance and activity.</td></tr>
+<tr><td><code>list_quotes</code><br><code>get_quote</code></td><td>Answer "What's unpaid? Did Meesho open it?" with live status, views, acceptance and activity.</td></tr>
 <tr><td><code>mark_paid</code><br><code>archive_quote</code><br><code>get_business_profile</code></td><td>Close the loop (this cancels pending reminders) and read the sender details.</td></tr>
 </table>
 
 <h2>Demo flow (as in the video)</h2>
 <ol style="margin:0 0 6pt;padding-left:15pt">
-<li><b>In Claude:</b> "Create a Dealflow quote for Priya at Acme Corp (priya@acme.com): logo redesign, 3 concepts, 2 revision rounds, ₹40,000, plus brand guidelines ₹15,000, 18% GST, 50% upfront." Claude writes the scope and terms and calls <code>create_quote</code>.</li>
+<li><b>In Claude:</b> "Create a Dealflow quote for Anurag at Meesho (anurag@example.com): logo redesign, 3 concepts, 2 revision rounds, ₹40,000, plus brand guidelines ₹15,000, 18% GST, 50% upfront." Claude writes the scope and terms and calls <code>create_quote</code>.</li>
 <li><b>In Dealflow:</b> Q-0001 is on the dashboard. The owner edits a price and adds a line item; totals update live. Saving changes the client's page immediately.</li>
 <li><b>As the client:</b> open the public link (no login). The owner's dashboard shows "Opened". Click <b>Accept</b>: it becomes invoice INV-0001 with payment details. Click <b>I've paid</b> with a UTR and a payment screenshot. The dashboard shows "Client marked paid".</li>
 <li><b>Back in Claude:</b> "Schedule 3 reminders…", then "What's unpaid?", then "Mark it paid". Pending reminders are cancelled automatically.</li>

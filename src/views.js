@@ -26,7 +26,7 @@ export function layout({ title, user, body, active = '', flash, bare = false }) 
 <meta name="description" content="Quotes that turn into invoices and chase payment. Runs on your own Claude, with no AI inside.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="/style.css?v=5">
+<link rel="stylesheet" href="/style.css?v=6">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%235b47f5'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
 </head><body>
 ${bare ? '' : `<header class="topbar"><div class="wrap">
@@ -37,7 +37,7 @@ ${flash ? `<div class="flash ${esc(flash.type)}" role="status"${flash.type === '
 ${body}
 </div></main>
 <footer class="site"><b>Dealflow</b> · Your Claude does the writing. Dealflow keeps it live. No AI inside.</footer>
-<script src="/app.js?v=5"></script>
+<script src="/app.js?v=6"></script>
 </body></html>`;
 }
 
@@ -104,12 +104,12 @@ export function landingPage({ user }) {
     <div class="win">
       <div class="win-bar"><i></i><i></i><i></i><span>Claude</span></div>
       <div class="chat">
-        <div class="msg me">Quote Priya at Acme for a logo redesign, ₹40k + brand guidelines ₹15k, 18% GST, half upfront.</div>
-        <div class="msg ai">Done. I wrote the scope and terms and sent it with <code>create_quote</code>. Q-0001 is in Priya's inbox, and follow-ups are set for days 3, 7 and 14.</div>
+        <div class="msg me">Quote Anurag at Meesho for a logo redesign, ₹40k + brand guidelines ₹15k, 18% GST, half upfront.</div>
+        <div class="msg ai">Done. I wrote the scope and terms and sent it with <code>create_quote</code>. Q-0001 is in Anurag's inbox, and follow-ups are set for days 3, 7 and 14.</div>
       </div>
     </div>
     <div class="quote-card">
-      <div class="top"><span class="num">Q-0001 · Acme Corp</span>
+      <div class="top"><span class="num">Q-0001 · Meesho</span>
         <span class="chips"><span class="badge b-sent">Sent</span><span class="badge b-viewed">Opened</span><span class="badge b-accepted">Accepted</span><span class="badge b-paid">Paid</span></span></div>
       <div class="muted small">Logo redesign & brand guidelines</div>
       <div class="amt">₹64,900</div>
@@ -117,14 +117,14 @@ export function landingPage({ user }) {
       <div class="ln"><span>Brand guidelines</span><span>₹15,000</span></div>
       <div class="ln"><span>GST 18%</span><span>₹9,900</span></div>
     </div>
-    <div class="ping">Priya accepted your quote<small>Invoice INV-0001 issued · just now</small></div>
+    <div class="ping">Anurag accepted your quote<small>Invoice INV-0001 issued · just now</small></div>
   </div>
 </section>
 
 <h2 class="section-title reveal" id="how">From one sentence to <span class="serif grad-text"><i>paid</i></span></h2>
 <p class="section-sub reveal">Claude does the thinking and writing. Dealflow does everything that has to keep happening after the chat closes.</p>
 <section class="flow">
-  <div class="card reveal"><div class="n grad-text">01 · In Claude</div><h3>"Quote Acme for a logo redesign, 40k, half upfront"</h3><p class="muted small">Claude writes the scope, line items, terms and the cover email.</p></div>
+  <div class="card reveal"><div class="n grad-text">01 · In Claude</div><h3>"Quote Meesho for a logo redesign, 40k, half upfront"</h3><p class="muted small">Claude writes the scope, line items, terms and the cover email.</p></div>
   <div class="card reveal"><div class="n grad-text">02 · Sent for you</div><h3>Lands in your client's inbox</h3><p class="muted small">You can tweak anything in Dealflow; the link always shows the latest version.</p></div>
   <div class="card reveal"><div class="n grad-text">03 · Your client</div><h3>Opens, accepts or asks for changes</h3><p class="muted small">No login. Accepting turns it into an invoice with your payment details.</p></div>
   <div class="card reveal"><div class="n grad-text">04 · Until paid</div><h3>Follow-ups on autopilot</h3><p class="muted small">Gentle, then firmer. They stop the moment the client pays.</p></div>
@@ -245,7 +245,7 @@ export function dashboardPage({ user, quotes, archived = [], archivedCount = 0, 
 <div class="card">
   <div class="row" style="margin-bottom:8px">${filters.map(([k, label]) => `<a class="btn sm ${filter === k ? 'primary' : ''}" href="/app?status=${k}">${label}</a>`).join('')}</div>
   ${nothing ? `<div class="empty"><div class="orb">${ICON.spark.replace('<svg', '<svg width="28" height="28"')}</div><h2>No quotes yet</h2><p>Connect Claude, then ask it something like:</p>
-  <div class="prompt" style="max-width:560px;margin:0 auto 16px;text-align:left" data-copy-text>"Create a Dealflow quote for Priya at Acme Corp (your-email@example.com) for a logo redesign: 3 concepts, 2 revision rounds, ₹40,000, 18% GST, 50% upfront."</div>
+  <div class="prompt" style="max-width:560px;margin:0 auto 16px;text-align:left" data-copy-text>"Create a Dealflow quote for Anurag at Meesho (your-email@example.com) for a logo redesign: 3 concepts, 2 revision rounds, ₹40,000, 18% GST, 50% upfront."</div>
   <p class="small">Dealflow emails it to the client right away and schedules follow-ups automatically.</p>
   <a class="btn primary" href="/app/connect">Connect Claude</a></div>`
     : shown.length === 0 ? '<div class="empty">Nothing here.</div>'
@@ -376,45 +376,84 @@ Thanks,
 }
 
 export function connectPage({ user, mcpUrl, flash, demo }) {
+  const cmd = `claude mcp add --transport http dealflow ${mcpUrl}`;
+  const firstPrompt = 'Create a Dealflow quote for Anurag at Meesho (anurag@example.com): logo redesign with 3 concepts and 2 revision rounds for ₹40,000, plus brand guidelines for ₹15,000. 18% GST, 50% upfront.';
+  const urlNote = demo
+    ? 'This is the shared test account, so this link is fixed. Sign up for your own account to get a private one.'
+    : 'Keep it private: anyone with this link can create and edit quotes in your account.';
+  const step = (n, title, body) => `<li class="vstep"><span class="vnum">${n}</span><div class="vbody"><h3>${title}</h3>${body}</div></li>`;
   return layout({
     title: 'Connect Claude · Dealflow',
     user,
     active: 'connect',
     flash,
     body: `<div class="narrow" style="margin:0 auto">
-<h1>Connect your Claude</h1>
-<p class="muted">Dealflow has no AI inside. Your own Claude does the writing and talks to Dealflow through this private connector link (MCP).</p>
-<div class="card">
-  <h3>Your connector URL</h3>
-  ${copyField(mcpUrl, 'mcp-url')}
-  <p class="hint">${demo ? 'This is the shared test account, so this URL is fixed. Sign up for your own account to get a private one.' : 'Keep this private: anyone with it can create and edit quotes in your account. You can reset it below.'}</p>
-</div>
-<div class="card">
-  <h3>Claude.ai or the Claude desktop app</h3>
-  <ol class="steps">
-    <li>Open <b>Settings → Connectors</b> (on Team/Enterprise plans an owner may need to do this under <b>Organization settings → Connectors</b>).</li>
-    <li>Click <b>Add custom connector</b>. Name it <b>Dealflow</b> and paste the URL above. Leave the advanced/OAuth fields empty.</li>
-    <li>Click <b>Add</b>. In a new chat, open the <b>+</b> / tools menu and make sure <b>Dealflow</b> is switched on.</li>
-    <li>Ask Claude for a quote. It will ask permission the first time it uses a Dealflow tool; allow it.</li>
-  </ol>
-</div>
-<div class="card">
-  <h3>Claude Code</h3>
-  <pre class="prompt mono" style="white-space:pre-wrap;word-break:break-all">claude mcp add --transport http dealflow ${esc(mcpUrl)}</pre>
-</div>
-<div class="card">
-  <h3>Try asking Claude</h3>
-  <div class="stack">
-    <div class="prompt" data-copy-text>"Create a Dealflow quote for Priya at Acme Corp (priya@acme.com): logo redesign with 3 concepts and 2 revision rounds for ₹40,000, plus brand guidelines for ₹15,000. 18% GST, 50% upfront."</div>
-    <div class="prompt" data-copy-text>"Schedule 3 reminders for that quote: a friendly nudge in 3 days, a follow-up in 7, and a firm one in 14."</div>
-    <div class="prompt" data-copy-text>"Which of my Dealflow invoices are unpaid? Has Acme opened theirs?"</div>
-    <div class="prompt" data-copy-text>"Acme paid. Mark Q-0001 paid."</div>
+<div class="page-head"><div><h1>Connect your Claude</h1>
+<div class="sub">One-time setup, about a minute. Dealflow has no AI inside: your own Claude does the writing and talks to Dealflow through a private link.</div></div></div>
+
+<div class="card" style="padding:14px 16px;margin-bottom:18px">
+  <div class="small muted" style="font-weight:600;margin-bottom:8px">Which Claude do you use?</div>
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab on" role="tab" data-tab="app" aria-selected="true">
+      <b>Claude app</b><span>claude.ai or the desktop app · <em>most people</em></span></button>
+    <button type="button" class="tab" role="tab" data-tab="code" aria-selected="false">
+      <b>Claude Code</b><span>terminal · for developers</span></button>
   </div>
 </div>
+
+<section class="tab-panel" data-panel="app">
+<ol class="vsteps card">
+${step(1, 'Copy your Dealflow link', `${copyField(mcpUrl, 'mcp-url')}<p class="hint">${urlNote}</p>`)}
+${step(2, 'Open Claude\'s connector settings', `<p>In Claude, click your name (bottom left) → <b>Settings</b> → <b>Connectors</b>.</p>
+<a class="btn sm" href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">Open Claude connectors ↗</a>
+<p class="hint">On a Team or Enterprise plan, an admin may need to add it under <b>Organization settings → Connectors</b>.</p>`)}
+${step(3, 'Add Dealflow as a custom connector', `<p>Click <b>Add custom connector</b>, fill in these two fields, then click <b>Add</b>:</p>
+<div class="mock">
+  <div><span>Name</span><code>Dealflow</code></div>
+  <div><span>Remote MCP server URL</span><code>paste the link from step 1</code></div>
+</div>
+<p class="hint">Leave the advanced / OAuth fields empty.</p>`)}
+${step(4, 'Switch it on in a new chat', `<p>Start a <b>new chat</b>. Click the <b>+</b> (or tools) button under the message box and make sure <b>Dealflow</b> is turned on.</p>`)}
+${step(5, 'Ask for your first quote', `<div class="prompt" data-copy-text>"${esc(firstPrompt)}"</div>
+<p class="hint" style="margin-top:8px">Click to copy. When Claude asks to use Dealflow, click <b>Allow</b> (or <b>Always allow</b>). The quote is emailed to the client and appears in <a href="/app">Quotes</a>.</p>`)}
+</ol>
+</section>
+
+<section class="tab-panel" data-panel="code" hidden>
+<ol class="vsteps card">
+${step(1, 'Copy this command', `${copyField(cmd, 'mcp-cmd')}<p class="hint">${urlNote}</p>`)}
+${step(2, 'Run it in your terminal', `<p>Paste it into a terminal where Claude Code is installed and press <b>Enter</b>.</p>`)}
+${step(3, 'Check it\'s connected', `<p>Start <code>claude</code> and type <code>/mcp</code>. You should see <b>dealflow</b> with 9 tools.</p>`)}
+${step(4, 'Ask for your first quote', `<div class="prompt" data-copy-text>"${esc(firstPrompt)}"</div>
+<p class="hint" style="margin-top:8px">Approve the Dealflow tool when Claude Code asks.</p>`)}
+</ol>
+</section>
+
+<div class="card" style="margin-top:18px">
+  <h3>More things to ask</h3>
+  <p class="muted small" style="margin-top:-4px">Click any line to copy it.</p>
+  <div class="stack">
+    <div class="prompt" data-copy-text>"Change the reminders for that quote: a friendly nudge in 2 days, a follow-up in 5, and a firm one in 10."</div>
+    <div class="prompt" data-copy-text>"Which of my Dealflow invoices are unpaid? Has Meesho opened theirs?"</div>
+    <div class="prompt" data-copy-text>"Meesho asked for 2 concepts instead of 3. Update the quote and bring the price down to ₹30,000."</div>
+    <div class="prompt" data-copy-text>"Meesho paid. Mark Q-0001 paid."</div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Something not working?</h3>
+  <div class="faq">
+    <details><summary>I don't see "Add custom connector"</summary><p class="muted small">Your Claude plan or organization may not allow custom connectors. On Team or Enterprise plans, ask an admin to add Dealflow under Organization settings → Connectors.</p></details>
+    <details><summary>Claude doesn't use Dealflow, or says it can't find it</summary><p class="muted small">Start a new chat and check that Dealflow is switched on in the + / tools menu. Mentioning "Dealflow" in your request helps.</p></details>
+    <details><summary>Claude seems stuck</summary><p class="muted small">It's usually waiting for you to approve the tool. Scroll down in the chat and click Allow. Writing a detailed quote can also take 20–40 seconds.</p></details>
+    <details><summary>The email didn't arrive</summary><p class="muted small">Check spam first. Then open the quote in Dealflow: the activity log shows whether the email was sent or why it failed, and you can re-send it from there.</p></details>
+  </div>
+</div>
+
 ${demo ? '' : `<div class="card">
-  <h3>Reset connector URL</h3>
-  <p class="muted small">Creates a new URL. The old one stops working, so you'll need to update it in Claude.</p>
-  <form method="post" action="/app/connect/reset"><button class="btn sm danger" data-confirm="Reset the connector URL? The current one will stop working." type="submit">Reset URL</button></form>
+  <h3>Reset your link</h3>
+  <p class="muted small">Creates a new link. The old one stops working, so you'll need to add the new one in Claude.</p>
+  <form method="post" action="/app/connect/reset"><button class="btn sm danger" data-confirm="Reset the connector link? The current one will stop working." type="submit">Reset link</button></form>
 </div>`}
 </div>`,
   });

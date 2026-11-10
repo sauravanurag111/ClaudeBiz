@@ -39,7 +39,7 @@ Lines in **[brackets]** are for you to fill in. Timings follow the brief.
 ## 4. Demo (2:15–4:15)
 
 **In Claude** (0:30). Paste:
-> Create a Dealflow quote for Priya at Acme Corp (priya@acme.com): logo redesign with 3 concepts and 2 revision
+> Create a Dealflow quote for Anurag at Meesho (anurag@example.com): logo redesign with 3 concepts and 2 revision
 > rounds for ₹40,000, plus brand guidelines for ₹15,000. 18% GST, 50% upfront, 50% on delivery.
 
 Say: *"Claude is writing the scope, line items and terms, and now it's calling Dealflow's create_quote tool."*
@@ -51,7 +51,7 @@ Click the edit link Claude returns.
 
 **As the client** (0:30). Copy the client link and open it in the incognito window.
 - *"No login, a clean quote."* Tick the box, click **Accept quote**. *"It's now invoice INV-0001 with my payment details."*
-- Back in the dashboard, refresh. Point at **Opened**, **Accepted by Priya** and the activity timeline.
+- Back in the dashboard, refresh. Point at **Opened**, **Accepted by Anurag** and the activity timeline.
 
 **Back in Claude** (0:30). Paste:
 > Schedule 3 payment reminders for that invoice: a friendly nudge in 3 days, a follow-up in 7 and a firm one in 14.
@@ -59,7 +59,7 @@ Click the edit link Claude returns.
 *"Claude wrote three emails, and Dealflow will send them on schedule even after I close this chat."* Show them on the
 quote page. Optionally click **Send now** on the first one.
 Then:
-> Priya just paid. Mark it paid.
+> Anurag just paid. Mark it paid.
 
 *"The invoice is paid and the remaining reminders are cancelled automatically."*
 

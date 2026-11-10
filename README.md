@@ -22,7 +22,7 @@ accepted quote into an invoice, and sends Claude-written payment reminders on sc
 
 ```mermaid
 flowchart LR
-  U[Business owner] -- "Quote Acme for a logo redesign..." --> C[Claude<br/>customer's own plan]
+  U[Business owner] -- "Quote Meesho for a logo redesign..." --> C[Claude<br/>customer's own plan]
   C -- MCP tools over HTTPS --> D[Dealflow server<br/>Node + Express]
   D <--> DB[(Postgres)]
   U -- edits in browser --> D
@@ -39,7 +39,7 @@ flowchart LR
    owner's payment instructions. The client can click **I've paid** with a payment reference.
 4. **Dealflow follows up.** Claude writes a reminder sequence with `schedule_reminders`. Dealflow's scheduler emails
    each one when it's due, and cancels the rest the moment the invoice is marked paid or the quote is declined.
-5. **Claude reads it back.** "What's unpaid? Has Acme opened it?" uses `list_quotes` / `get_quote`.
+5. **Claude reads it back.** "What's unpaid? Has Meesho opened it?" uses `list_quotes` / `get_quote`.
 
 ## MCP tools
 
@@ -64,7 +64,7 @@ in the path identifies the account (no OAuth in v1).
 2. In Claude (claude.ai or the desktop app): **Settings → Connectors → Add custom connector**. Name it
    `Dealflow`, paste the URL, leave OAuth fields empty, click **Add**.
 3. In a new chat, make sure Dealflow is enabled in the tools menu, then ask:
-   > Create a Dealflow quote for Priya at Acme Corp (priya@acme.com): logo redesign with 3 concepts and 2 revision
+   > Create a Dealflow quote for Anurag at Meesho (anurag@example.com): logo redesign with 3 concepts and 2 revision
    > rounds for ₹40,000, plus brand guidelines for ₹15,000. 18% GST, 50% upfront. Then schedule 3 reminders:
    > friendly in 3 days, follow-up in 7, firm in 14.
 

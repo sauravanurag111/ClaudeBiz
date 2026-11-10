@@ -23,6 +23,13 @@
     if (row && !e.target.closest('a,button,input')) window.location = row.dataset.href;
   });
 
+  // Tabs (Connect page): Claude app vs Claude Code.
+  const tabs = document.querySelectorAll('[data-tab]');
+  tabs.forEach((t) => t.addEventListener('click', () => {
+    tabs.forEach((x) => { x.classList.toggle('on', x === t); x.setAttribute('aria-selected', x === t); });
+    document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== t.dataset.tab; });
+  }));
+
   // Flash messages: dismiss button, success ones fade out on their own.
   document.querySelectorAll('[data-dismiss]').forEach((b) => b.addEventListener('click', () => b.closest('.flash').classList.add('hide')));
   document.querySelectorAll('.flash[data-autohide]').forEach((f) => setTimeout(() => f.classList.add('hide'), 6000));

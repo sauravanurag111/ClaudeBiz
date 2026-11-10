@@ -78,7 +78,7 @@
 
 <h2>Data flow</h2>
 <ol style="margin:0 0 6pt;padding-left:15pt">
-<li><b>Owner → Claude:</b> "Quote Acme for a logo redesign…". Claude reads the tool descriptions Dealflow publishes over MCP and writes the content.</li>
+<li><b>Owner → Claude:</b> "Quote Meesho for a logo redesign…". Claude reads the tool descriptions Dealflow publishes over MCP and writes the content.</li>
 <li><b>Claude → Dealflow:</b> <code>POST /mcp/:key</code> → <code>create_quote</code>. The key in the URL identifies the account. Dealflow validates the input with zod schemas, computes totals and numbering (Q-0001), saves to Postgres, logs an event, and returns the public and edit links.</li>
 <li><b>Owner → Dealflow:</b> edits in <code>/app/quotes/:id</code>. Changes are saved and logged as field-level events. The client page always shows the latest version.</li>
 <li><b>Client → Dealflow:</b> <code>GET /q/:publicId</code> records the view, excluding the owner and link-preview bots. <code>POST …/accept</code> stores the name and timestamp, assigns INV-0001, sets the due date and shows payment instructions. <code>POST …/paid</code> flags "client says paid".</li>
@@ -142,7 +142,7 @@
 <li>Payment links with automatic reconciliation, which is the biggest value add and a revenue line.</li>
 <li>WhatsApp reminders and per-client reminder preferences.</li>
 <li>OAuth connector and listing in Claude's connector directory for one-click install.</li>
-<li>Recurring retainers ("bill Acme ₹50k on the 1st every month") and simple receivables reports, which Claude can query.</li>
+<li>Recurring retainers ("bill Meesho ₹50k on the 1st every month") and simple receivables reports, which Claude can query.</li>
 </ol>
 </section>
 </body></html>
