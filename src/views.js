@@ -1,6 +1,6 @@
 import {
   STATUS_LABEL, totals, money, fmtDate, fmtDateTime, isoDate, quoteNumber, invoiceNumber, docNumber,
-  isInvoice, publicUrl, baseUrl, fillTemplate,
+  isInvoice, publicUrl, baseUrl, fillTemplate, displayStatus, OPEN_STATUSES,
 } from './quotes.js';
 
 export function esc(value) {
@@ -105,21 +105,43 @@ function sumByCurrency(rows) {
   return parts.length ? parts.join(' + ') : money(0);
 }
 
-export function dashboardPage({ user, quotes, filter, scheduledCount, flash }) {
+function rowActions(x, filter, emailOn) {
+  const backTo = `/app?status=${filter}`;
+  const hidden = `<input type="hidden" name="back" value="${esc(backTo)}">`;
+  const canSend = x.client_email && !['paid', 'declined'].includes(x.status) && !x.archived_at;
+  const sendLabel = x.status === 'draft' ? 'Send' : 'Resend';
+  return `<div class="row-actions">
+  ${canSend ? `<form method="post" action="/app/quotes/${x.id}/send">${hidden}<button class="btn sm" type="submit" title="${emailOn ? `Email to ${esc(x.client_email)}` : 'Email sending not configured'}">${sendLabel}</button></form>` : ''}
+  ${x.archived_at
+    ? `<form method="post" action="/app/quotes/${x.id}/unarchive">${hidden}<button class="btn sm" type="submit">Restore</button></form>`
+    : `<form method="post" action="/app/quotes/${x.id}/archive">${hidden}<button class="btn sm" type="submit" title="Hide from this list and pause reminders">Archive</button></form>`}
+  <form method="post" action="/app/quotes/${x.id}/delete">${hidden}<button class="btn sm danger" type="submit" data-confirm="Delete ${esc(docNumber(x))} permanently? The client link will stop working.">Delete</button></form>
+</div>`;
+}
+
+export function dashboardPage({ user, quotes, archived = [], archivedCount = 0, filter, scheduledCount, flash, emailOn }) {
   const awaiting = quotes.filter((x) => x.status === 'accepted');
+  const clientPaid = awaiting.filter((x) => x.client_paid_at);
   const paid = quotes.filter((x) => x.status === 'paid');
-  const open = quotes.filter((x) => ['draft', 'sent', 'viewed'].includes(x.status));
-  const filters = [['all', 'All'], ['unpaid', 'Unpaid'], ['accepted', 'Awaiting payment'], ['paid', 'Paid'], ['draft', 'Drafts']];
-  const shown = filter === 'all' ? quotes
-    : filter === 'unpaid' ? quotes.filter((x) => !['paid', 'declined'].includes(x.status))
-      : quotes.filter((x) => x.status === filter);
+  const open = quotes.filter((x) => OPEN_STATUSES.includes(x.status));
+  const filters = [['all', 'All'], ['unpaid', 'Unpaid'], ['accepted', 'Awaiting payment'],
+    ['client_paid', `Client marked paid${clientPaid.length ? ` (${clientPaid.length})` : ''}`], ['paid', 'Paid'], ['draft', 'Drafts'],
+    ['archived', `Archived${archivedCount ? ` (${archivedCount})` : ''}`]];
+  const shown = filter === 'archived' ? archived
+    : filter === 'all' ? quotes
+      : filter === 'unpaid' ? quotes.filter((x) => !['paid', 'declined'].includes(x.status))
+        : filter === 'client_paid' ? clientPaid
+          : filter === 'accepted' ? awaiting.filter((x) => !x.client_paid_at)
+            : quotes.filter((x) => x.status === filter);
   const rows = shown.map((x) => `<tr class="click" data-href="/app/quotes/${x.id}">
-  <td><a href="/app/quotes/${x.id}"><b>${esc(docNumber(x))}</b></a>${x.client_paid_at && x.status === 'accepted' ? '<div class="small" style="color:var(--warn)">Client says paid</div>' : ''}</td>
+  <td><a href="/app/quotes/${x.id}"><b>${esc(docNumber(x))}</b></a></td>
   <td>${esc(x.title)}<div class="muted small">${esc(x.client_company || x.client_name)}</div></td>
-  <td>${badge(x.status)}${x.view_count ? `<div class="muted small">opened ${x.view_count}×</div>` : ''}</td>
+  <td>${badge(displayStatus(x))}${x.view_count ? `<div class="muted small">opened ${x.view_count}×</div>` : ''}</td>
   <td class="num">${esc(money(totals(x).total, x.currency))}</td>
   <td class="muted small">${x.status === 'accepted' && x.due_date ? `Due ${esc(fmtDate(x.due_date))}` : esc(fmtDate(x.created_at))}</td>
+  <td>${rowActions(x, filter, emailOn)}</td>
 </tr>`).join('');
+  const nothing = quotes.length === 0 && archivedCount === 0;
   return layout({
     title: 'Quotes · Dealflow',
     user,
@@ -130,18 +152,19 @@ export function dashboardPage({ user, quotes, filter, scheduledCount, flash }) {
 <form class="inline" method="post" action="/app/quotes/new"><button class="btn" type="submit">+ Blank quote</button></form>
 <a class="btn primary" href="/app/connect">Create from Claude</a></div>
 <div class="grid g4" style="margin-bottom:18px">
-  <div class="card kpi"><div class="label">Awaiting payment</div><div class="value">${esc(sumByCurrency(awaiting))}</div><div class="muted small">${awaiting.length} invoice(s)</div></div>
+  <div class="card kpi"><div class="label">Awaiting payment</div><div class="value">${esc(sumByCurrency(awaiting))}</div><div class="muted small">${awaiting.length} invoice(s)${clientPaid.length ? `, ${clientPaid.length} marked paid by client` : ''}</div></div>
   <div class="card kpi"><div class="label">Paid</div><div class="value">${esc(sumByCurrency(paid))}</div><div class="muted small">${paid.length} invoice(s)</div></div>
   <div class="card kpi"><div class="label">Open quotes</div><div class="value">${open.length}</div><div class="muted small">${esc(sumByCurrency(open))}</div></div>
   <div class="card kpi"><div class="label">Reminders scheduled</div><div class="value">${scheduledCount}</div><div class="muted small">sent automatically</div></div>
 </div>
 <div class="card">
   <div class="row" style="margin-bottom:8px">${filters.map(([k, label]) => `<a class="btn sm ${filter === k ? 'primary' : ''}" href="/app?status=${k}">${label}</a>`).join('')}</div>
-  ${quotes.length === 0 ? `<div class="empty"><h2>No quotes yet</h2><p>Connect Claude, then ask it something like:</p>
-  <div class="prompt" style="max-width:560px;margin:0 auto 16px">"Create a Dealflow quote for Acme Corp (priya@acme.com) for a logo redesign: 3 concepts, 2 revision rounds, ₹40,000, 18% GST, 50% upfront. Then schedule reminders."</div>
+  ${nothing ? `<div class="empty"><h2>No quotes yet</h2><p>Connect Claude, then ask it something like:</p>
+  <div class="prompt" style="max-width:560px;margin:0 auto 16px">"Create a Dealflow quote for Priya at Acme Corp (your-email@example.com) for a logo redesign: 3 concepts, 2 revision rounds, ₹40,000, 18% GST, 50% upfront."</div>
+  <p class="small">Dealflow emails it to the client right away and schedules follow-ups automatically.</p>
   <a class="btn primary" href="/app/connect">Connect Claude</a></div>`
     : shown.length === 0 ? '<div class="empty">Nothing here.</div>'
-      : `<div class="table-scroll"><table><thead><tr><th>Number</th><th>Project</th><th>Status</th><th class="num">Total</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></div>`}
+      : `<div class="table-scroll"><table><thead><tr><th>Number</th><th>Project</th><th>Status</th><th class="num">Total</th><th>Date</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table></div>`}
 </div>`,
   });
 }
@@ -161,7 +184,7 @@ export function quoteEditPage({ user, quote, reminders, events, flash, emailOn }
   <td class="amt" data-amt></td>
   <td class="del"><button type="button" class="btn sm danger" data-del-item title="Remove">×</button></td></tr>`).join('');
   const reminderHtml = reminders.map((r) => `<div class="reminder">
-  <div class="row small" style="margin-bottom:6px">${rbadge(r.status)}
+  <div class="row small" style="margin-bottom:6px">${rbadge(r.status)}${r.auto ? '<span class="badge b-draft">standard</span>' : ''}
     <span class="muted">${r.status === 'sent' ? `sent ${esc(fmtDateTime(r.sent_at))}${r.delivery === 'log' ? ' (recorded, email off)' : ''}` : `send at ${esc(fmtDateTime(r.send_at))}`}</span></div>
   ${r.error ? `<div class="small" style="color:var(--bad)">${esc(r.error)}</div>` : ''}
   ${['scheduled', 'failed'].includes(r.status) ? `<details><summary>${esc(fillTemplate(r.subject, quote, user))}</summary>
@@ -177,7 +200,10 @@ export function quoteEditPage({ user, quote, reminders, events, flash, emailOn }
 
   const statusActions = [];
   if (quote.status === 'draft') statusActions.push(`<form class="inline" method="post" action="/app/quotes/${quote.id}/mark-sent"><button class="btn sm">Mark as sent</button></form>`);
-  if (quote.status !== 'paid' && quote.status !== 'declined') statusActions.push(`<form class="inline" method="post" action="/app/quotes/${quote.id}/mark-paid"><button class="btn sm good">Mark paid</button></form>`);
+  if (quote.status !== 'paid' && quote.status !== 'declined') statusActions.push(`<form class="inline" method="post" action="/app/quotes/${quote.id}/mark-paid"><button class="btn sm good">${quote.client_paid_at ? 'Confirm paid' : 'Mark paid'}</button></form>`);
+  statusActions.push(quote.archived_at
+    ? `<form class="inline" method="post" action="/app/quotes/${quote.id}/unarchive"><button class="btn sm">Restore</button></form>`
+    : `<form class="inline" method="post" action="/app/quotes/${quote.id}/archive"><button class="btn sm" title="Hide from the list and pause reminders">Archive</button></form>`);
 
   return layout({
     title: `${docNumber(quote)} · ${quote.title} · Dealflow`,
@@ -187,11 +213,13 @@ export function quoteEditPage({ user, quote, reminders, events, flash, emailOn }
     body: `
 <div class="row" style="margin-bottom:6px"><a href="/app" class="small">← All quotes</a></div>
 <div class="row" style="margin-bottom:18px">
-  <h1 style="margin:0">${esc(docNumber(quote))}</h1>${badge(quote.status)}
-  ${quote.client_paid_at && quote.status === 'accepted' ? `<span class="badge b-accepted">Client says paid ${esc(fmtDate(quote.client_paid_at))}</span>` : ''}
+  <h1 style="margin:0">${esc(docNumber(quote))}</h1>${badge(displayStatus(quote))}
+  ${quote.archived_at ? '<span class="badge b-cancelled">Archived</span>' : ''}
   <span class="spacer"></span>${statusActions.join('')}
   <a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener">View client page ↗</a>
 </div>
+${quote.status === 'changes_requested' && quote.change_request ? `<div class="flash info"><b>${esc(quote.client_name || 'Your client')} requested changes</b> (${esc(fmtDateTime(quote.change_requested_at))}):<div class="prewrap" style="margin-top:4px;font-weight:400">${esc(quote.change_request)}</div><div class="small" style="margin-top:6px;font-weight:400">Edit below (or ask Claude to), save, then click <b>Email link</b> to send the revised quote. Reminders are paused until you do.</div></div>` : ''}
+${quote.status === 'accepted' && quote.client_paid_at ? `<div class="flash info"><b>${esc(quote.client_name || 'Your client')} marked this invoice as paid</b> on ${esc(fmtDateTime(quote.client_paid_at))}.${quote.client_paid_note ? ` Reference: <b>${esc(quote.client_paid_note)}</b>.` : ''}${quote.paid_proof_mime ? ` <a href="/app/quotes/${quote.id}/proof" target="_blank" rel="noopener">View payment screenshot ↗</a>` : ''} <span style="font-weight:400">Check your account, then click <b>Confirm paid</b>.</span></div>` : ''}
 <div class="split">
 <div>
 <form method="post" action="/app/quotes/${quote.id}" id="quote-form" class="card">
@@ -229,15 +257,15 @@ export function quoteEditPage({ user, quote, reminders, events, flash, emailOn }
     <h3>Client link</h3>
     <p class="muted small">Anyone with this link can view${isInvoice(quote) ? ' and pay' : ' and accept'}. No login needed.</p>
     ${copyField(link, 'client-link')}
-    ${quote.client_email ? `<form method="post" action="/app/quotes/${quote.id}/send" style="margin-top:10px"><button class="btn sm block" type="submit">Email link to ${esc(quote.client_email)}</button></form>` : '<p class="hint">Add a client email to send it from here.</p>'}
+    ${quote.client_email ? `<form method="post" action="/app/quotes/${quote.id}/send" style="margin-top:10px"><button class="btn sm block" type="submit">${quote.status === 'draft' ? 'Email' : 'Re-send'} link to ${esc(quote.client_email)}</button></form>` : '<p class="hint">Add a client email to send it from here.</p>'}
     ${emailOn ? '' : '<p class="hint">Email sending is not configured on this server; emails are recorded below instead.</p>'}
     <div class="small muted" style="margin-top:10px">Opened ${quote.view_count} time(s)${quote.viewed_at ? `, first ${esc(fmtDateTime(quote.viewed_at))}` : ''}</div>
     ${quote.accepted_by ? `<div class="small" style="margin-top:4px">Accepted by <b>${esc(quote.accepted_by)}</b> on ${esc(fmtDateTime(quote.accepted_at))}</div>` : ''}
-    ${quote.client_paid_note ? `<div class="small" style="margin-top:4px">Client's payment note: "${esc(quote.client_paid_note)}"</div>` : ''}
+    ${quote.client_paid_at ? `<div class="small" style="margin-top:4px">Client marked paid ${esc(fmtDateTime(quote.client_paid_at))}${quote.client_paid_note ? `, ref "${esc(quote.client_paid_note)}"` : ''}${quote.paid_proof_mime ? ` · <a href="/app/quotes/${quote.id}/proof" target="_blank" rel="noopener">screenshot</a>` : ''}</div>` : ''}
   </div>
   <div class="card">
     <h3>Payment reminders</h3>
-    <p class="muted small">Sent automatically to the client. Pending ones are cancelled when you mark it paid.</p>
+    <p class="muted small">Sent automatically to the client. Pending ones are cancelled when you mark it paid, archive it, or the client declines or asks for changes.</p>
     ${reminderHtml || '<p class="small muted">None yet. Ask Claude: "Schedule 3 friendly-to-firm reminders for ' + esc(docNumber(quote)) + '".</p>'}
     <details style="margin-top:12px"><summary>+ Add a reminder</summary>
     <form method="post" action="/app/quotes/${quote.id}/reminders" style="margin-top:10px" data-local-time>
@@ -325,6 +353,10 @@ export function settingsPage({ user, flash }) {
     <div class="field"><label>Tax ID (GSTIN / VAT)</label><input type="text" name="tax_id" value="${esc(user.tax_id)}"></div>
     <div class="field"><label>Default currency</label><input type="text" name="currency" maxlength="3" value="${esc(user.currency)}"></div>
   </div>
+  <h3 style="margin-top:6px">Automatic follow-up</h3>
+  <label style="display:flex;gap:8px;align-items:center;font-weight:500;margin-bottom:8px"><input type="checkbox" name="auto_send" ${user.auto_send ? 'checked' : ''}> Email new quotes from Claude to the client straight away</label>
+  <label style="display:flex;gap:8px;align-items:center;font-weight:500;margin-bottom:8px"><input type="checkbox" name="auto_reminders" ${user.auto_reminders ? 'checked' : ''}> Schedule standard follow-up reminders after sending</label>
+  <div class="field" style="max-width:260px"><label>Follow-up days after sending</label><input type="text" name="reminder_days" value="${esc(user.reminder_days)}" placeholder="3,7,14"><div class="hint">Comma-separated, up to 5. If Claude writes custom reminders, they replace these.</div></div>
   <div class="field"><label>Payment instructions</label><textarea name="payment_instructions" rows="4" placeholder="UPI ID, bank account, payment link...">${esc(user.payment_instructions)}</textarea>
   <div class="hint">Shown on invoices after your client accepts.</div></div>
   <button class="btn primary" type="submit">Save</button>
@@ -343,26 +375,40 @@ export function publicQuotePage({ quote, owner, viewer, flash }) {
   const expired = !inv && quote.valid_until && new Date(`${isoDate(quote.valid_until)}T23:59:59Z`) < new Date();
 
   let actions = '';
-  if (['draft', 'sent', 'viewed'].includes(quote.status)) {
+  if (OPEN_STATUSES.includes(quote.status)) {
+    const pendingChanges = quote.status === 'changes_requested' && quote.change_request
+      ? `<div class="flash info" style="margin-bottom:14px">You requested changes on ${esc(fmtDate(quote.change_requested_at))}: <span class="prewrap">"${esc(quote.change_request)}"</span><br><span class="small">${esc(owner.business_name || owner.name)} will update this quote at the same link. You can still accept it as it is.</span></div>`
+      : '';
     actions = expired
       ? `<div class="card"><b>This quote expired on ${esc(fmtDate(quote.valid_until))}.</b> <span class="muted">Reply to ${esc(owner.business_name || owner.name)} for an updated quote.</span></div>`
-      : `<div class="card"><h2>Accept this quote</h2>
+      : `<div class="card">${pendingChanges}<h2>Accept this quote</h2>
 <p class="muted">Accepting confirms the scope and price above. You'll get an invoice right here on this page.</p>
 <form method="post" action="/q/${esc(quote.public_id)}/accept" class="row" style="align-items:flex-end">
   <div style="flex:1;min-width:200px"><label>Your full name</label><input type="text" name="name" required value="${esc(quote.client_name)}"></div>
   <label class="small" style="display:flex;gap:6px;align-items:center;font-weight:500;flex-basis:100%;order:3"><input type="checkbox" required> I agree to the scope, price and terms above.</label>
   <button class="btn primary lg" type="submit">Accept quote</button>
 </form>
-<details style="margin-top:14px"><summary class="muted small">Not right? Decline or request changes</summary>
-<form method="post" action="/q/${esc(quote.public_id)}/decline" style="margin-top:10px">
-  <div class="field"><textarea name="reason" rows="3" placeholder="Optional: what would you like changed?"></textarea></div>
-  <button class="btn sm danger" type="submit">Decline quote</button></form></details></div>`;
+<details style="margin-top:14px"><summary class="small" style="color:var(--accent)">Not quite right? Request changes or decline</summary>
+<form method="post" action="/q/${esc(quote.public_id)}/changes" style="margin-top:10px">
+  <div class="field"><label>What would you like changed?</label>
+  <textarea name="changes" rows="3" required placeholder="e.g. Can we do 2 logo concepts instead of 3 and bring the price down?"></textarea></div>
+  <div class="row">
+    <button class="btn primary" type="submit">Send change request</button>
+    <button class="btn danger" type="submit" formaction="/q/${esc(quote.public_id)}/decline" formnovalidate data-confirm="Decline this quote? ${esc(owner.business_name || owner.name)} will be notified.">Decline quote</button>
+  </div>
+  <p class="hint">${esc(owner.business_name || owner.name)} gets your message and can send an updated quote to this same link.</p>
+</form></details></div>`;
   } else if (quote.status === 'accepted') {
     actions = `<div class="card"><h2>Pay ${esc(money(t.total, cur))}${quote.due_date ? ` by ${esc(fmtDate(quote.due_date))}` : ''}</h2>
 ${owner.payment_instructions ? `<div class="prewrap" style="background:var(--bg);padding:12px;border-radius:9px">${esc(owner.payment_instructions)}</div>` : `<p class="muted">Contact ${esc(owner.business_name || owner.name)} at ${esc(owner.email)} for payment details.</p>`}
 ${quote.client_paid_at ? `<p class="flash ok" style="margin:14px 0 0">Thanks! You told us you paid on ${esc(fmtDate(quote.client_paid_at))}. ${esc(owner.business_name || owner.name)} will confirm shortly.</p>`
-    : `<form method="post" action="/q/${esc(quote.public_id)}/paid" style="margin-top:14px">
-  <div class="field"><label>Already paid?</label><input type="text" name="note" placeholder="Optional: payment reference / UTR"></div>
+    : `<form method="post" action="/q/${esc(quote.public_id)}/paid" style="margin-top:14px" data-proof-form>
+  <h3 style="margin-bottom:8px">Already paid? Let ${esc(owner.business_name || owner.name)} know</h3>
+  <div class="field"><label>Payment reference / UTR</label><input type="text" name="note" placeholder="e.g. UTR 412345678901"></div>
+  <div class="field"><label>Payment screenshot <span class="muted" style="font-weight:400">(optional)</span></label>
+    <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf" data-proof-file>
+    <input type="hidden" name="proof">
+    <div class="hint" data-proof-status>PNG, JPG or PDF, up to 5 MB.</div></div>
   <button class="btn good" type="submit">I've paid</button></form>`}</div>`;
   } else if (quote.status === 'paid') {
     actions = `<div class="card" style="text-align:center"><span class="stamp">PAID</span><p class="muted" style="margin-top:12px">Paid on ${esc(fmtDate(quote.paid_at))}. Thank you!</p></div>`;

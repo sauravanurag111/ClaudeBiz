@@ -93,13 +93,18 @@ export async function ensureDemoUser() {
   if (existing) {
     await one('UPDATE users SET password_hash = $2, mcp_key = COALESCE($3, mcp_key) WHERE id = $1 RETURNING id',
       [existing.id, hashPassword(password), fixedKey || null]);
+    // One-time rename of the original demo identity; later edits in Settings are kept.
+    await one(
+      `UPDATE users SET name = 'Anurag', business_name = 'Meesho', business_address = 'Bengaluru, India',
+         payment_instructions = 'UPI: anurag@upi (sample details for the demo account)'
+       WHERE id = $1 AND name = 'Demo Studio' RETURNING id`, [existing.id]);
     return;
   }
-  const user = await createUser({ email, password, name: 'Demo Studio', businessName: 'Pixel & Co. Design Studio' });
+  const user = await createUser({ email, password, name: 'Anurag', businessName: 'Meesho' });
   if (fixedKey) await one('UPDATE users SET mcp_key = $2 WHERE id = $1 RETURNING id', [user.id, fixedKey]);
   await one(
     `UPDATE users SET business_address = $2, payment_instructions = $3 WHERE id = $1 RETURNING id`,
-    [user.id, 'Bengaluru, India', 'UPI: pixelandco@upi (sample details for the demo account)\nBank transfer: details shared on request'],
+    [user.id, 'Bengaluru, India', 'UPI: anurag@upi (sample details for the demo account)'],
   );
   console.log(`Created demo account ${email}`);
 }

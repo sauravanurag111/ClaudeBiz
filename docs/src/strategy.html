@@ -80,22 +80,22 @@ that send quotes too.</p>
 <li>In a new chat, enable Dealflow in the tools menu and ask for a quote. Allow the tool when Claude asks.</li>
 </ol>
 
-<h2>The Claude integration: 8 MCP tools</h2>
+<h2>The Claude integration: 9 MCP tools</h2>
 <table class="tools">
 <tr><th>Tool</th><th>Claude uses it to…</th></tr>
-<tr><td><code>create_quote</code></td><td>Send the quote it wrote (title, scope, line items, tax, discount, payment terms, T&amp;Cs). It gets back the client link and edit link.</td></tr>
+<tr><td><code>create_quote</code></td><td>Send the quote it wrote (title, scope, line items, tax, discount, payment terms, T&amp;Cs). Dealflow emails it to the client straight away and schedules follow-ups automatically.</td></tr>
 <tr><td><code>update_quote</code></td><td>Apply changes ("add a 10% discount", "split the logo into 2 phases").</td></tr>
 <tr><td><code>send_quote</code></td><td>Email the client the link, with a message Claude writes.</td></tr>
 <tr><td><code>schedule_reminders</code></td><td>Queue a reminder sequence it writes, from polite to firm, with placeholders like <code>{{amount}}</code> that Dealflow fills in.</td></tr>
 <tr><td><code>list_quotes</code><br><code>get_quote</code></td><td>Answer "What's unpaid? Did Acme open it?" with live status, views, acceptance and activity.</td></tr>
-<tr><td><code>mark_paid</code><br><code>get_business_profile</code></td><td>Close the loop (this cancels pending reminders) and read the sender details.</td></tr>
+<tr><td><code>mark_paid</code><br><code>archive_quote</code><br><code>get_business_profile</code></td><td>Close the loop (this cancels pending reminders) and read the sender details.</td></tr>
 </table>
 
 <h2>Demo flow (as in the video)</h2>
 <ol style="margin:0 0 6pt;padding-left:15pt">
 <li><b>In Claude:</b> "Create a Dealflow quote for Priya at Acme Corp (priya@acme.com): logo redesign, 3 concepts, 2 revision rounds, ₹40,000, plus brand guidelines ₹15,000, 18% GST, 50% upfront." Claude writes the scope and terms and calls <code>create_quote</code>.</li>
 <li><b>In Dealflow:</b> Q-0001 is on the dashboard. The owner edits a price and adds a line item; totals update live. Saving changes the client's page immediately.</li>
-<li><b>As the client:</b> open the public link (no login). The owner's dashboard shows "Opened". Click <b>Accept</b>: it becomes invoice INV-0001 with payment details. Click <b>I've paid</b> with a UTR.</li>
+<li><b>As the client:</b> open the public link (no login). The owner's dashboard shows "Opened". Click <b>Accept</b>: it becomes invoice INV-0001 with payment details. Click <b>I've paid</b> with a UTR and a payment screenshot. The dashboard shows "Client marked paid".</li>
 <li><b>Back in Claude:</b> "Schedule 3 reminders…", then "What's unpaid?", then "Mark it paid". Pending reminders are cancelled automatically.</li>
 </ol>
 

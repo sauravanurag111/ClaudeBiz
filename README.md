@@ -46,12 +46,13 @@ flowchart LR
 | Tool | What it does |
 |---|---|
 | `get_business_profile` | Sender details, default currency, payment instructions, quote counts |
-| `create_quote` | Create a quote from Claude's title, scope, line items, tax, discount, payment terms and T&Cs. Returns client and edit links |
+| `create_quote` | Create a quote from Claude's title, scope, line items, tax, discount, payment terms and T&Cs. **Automatically emails it to the client and schedules follow-ups** (3, 7, 14 days by default; Claude can write custom ones in the same call). Returns client and edit links |
 | `list_quotes` | List quotes/invoices, filterable (`unpaid`, `accepted`, `paid`...), with open/accept status |
 | `get_quote` | Full detail, reminders and activity log for one quote |
 | `update_quote` | Change any field (items are replaced as a whole) |
 | `send_quote` | Email the client the link (message optionally written by Claude) |
 | `schedule_reminders` | Add Claude-written reminder emails at relative or absolute times. Supports `{{client_name}}`, `{{amount}}`, `{{number}}`, `{{due_date}}`, `{{link}}`, `{{sender_name}}` |
+| `archive_quote` | Hide a quote from the main list (or restore it); pauses its reminders |
 | `mark_paid` | Mark paid and cancel pending reminders |
 
 Transport: Streamable HTTP, stateless (`POST /mcp/:key`). Each account has its own secret connector URL; the key
@@ -73,7 +74,7 @@ Claude Code: `claude mcp add --transport http dealflow <connector URL>`
 
 | Built and live in v1 | Simulated / manual in v1 | Proposed next |
 |---|---|---|
-| MCP server with 8 tools | **Payment** is not processed: the invoice shows the owner's payment instructions (UPI/bank) and the client clicks "I've paid"; the owner confirms | Razorpay/Stripe payment links with automatic "paid" on webhook |
+| MCP server with 9 tools | **Payment** is not processed: the invoice shows the owner's payment instructions (UPI/bank) and the client clicks "I've paid"; the owner confirms | Razorpay/Stripe payment links with automatic "paid" on webhook |
 | Owner dashboard: edit every field, line items, reminders, activity log | **Email** goes out only if a Brevo key is configured; otherwise reminders are recorded in the app as "recorded, email off" | WhatsApp reminders (very common in India) |
 | Public client page: view tracking, accept with name + timestamp, decline with reason, "I've paid", print to PDF | The demo account's payment details are samples | OAuth for the MCP connector instead of a secret URL |
 | Quote → invoice conversion with separate numbering | | Recurring retainers, multi-currency reporting, GST-compliant invoice PDF |
@@ -94,7 +95,7 @@ little vanilla JS. No frontend framework and no build step.
 
 ```
 src/server.js     routes: marketing, auth, owner app, public client pages, /mcp/:key, /cron/tick
-src/mcp.js        MCP server and the 8 tools
+src/mcp.js        MCP server and the 9 tools
 src/quotes.js     domain logic: totals, numbering, status changes, reminders, template placeholders
 src/reminders.js  scheduler and email delivery (Brevo API, or in-app log)
 src/views.js      HTML pages
@@ -102,7 +103,11 @@ src/db.js         Postgres pool and schema (auto-migrates on boot)
 src/auth.js       password hashing (scrypt), signed session cookies, demo account
 ```
 
-Statuses: `draft → sent → viewed → accepted (invoice, awaiting payment) → paid`, or `declined`.
+Statuses: `draft → sent → viewed → (changes requested) → accepted (invoice, awaiting payment) → client marked paid → paid`, or `declined`. Quotes can also be archived.
+
+Client page: accept with name, **request changes** (pauses reminders and notifies the owner), decline, and **"I've paid"** with a
+payment reference and an optional screenshot (PNG/JPG/PDF, stored in Postgres, visible only to the owner). The owner gets
+an email when the client accepts, requests changes, declines or marks paid.
 
 ## Run locally
 

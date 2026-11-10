@@ -38,7 +38,7 @@
   <text x="381" y="90" text-anchor="middle" fill="#666">dashboard, edit quote, reminders, settings</text>
   <rect x="252" y="112" width="258" height="44" rx="8" fill="#fff" stroke="#4f46e5"/>
   <text x="381" y="130" text-anchor="middle" font-weight="700">MCP endpoint  POST /mcp/:key</text>
-  <text x="381" y="146" text-anchor="middle" fill="#666">8 tools · Streamable HTTP · stateless</text>
+  <text x="381" y="146" text-anchor="middle" fill="#666">9 tools · Streamable HTTP · stateless</text>
   <rect x="252" y="168" width="258" height="44" rx="8" fill="#fff" stroke="#4f46e5"/>
   <text x="381" y="186" text-anchor="middle" font-weight="700">Public client pages  /q/:publicId</text>
   <text x="381" y="202" text-anchor="middle" fill="#666">quote → invoice, view &amp; acceptance tracking</text>
@@ -116,7 +116,7 @@
 <h2>What was built vs. what is proposed</h2>
 <table>
 <tr><th style="width:33%"><span class="tag built">BUILT &amp; LIVE</span></th><th style="width:33%"><span class="tag sim">SIMULATED / MANUAL</span></th><th><span class="tag prop">PROPOSED PRODUCTION SYSTEM</span></th></tr>
-<tr><td>MCP server, 8 tools, per-account connector URL</td><td>Payment collection: owner's UPI/bank text plus a client "I've paid" button; owner confirms</td><td>Razorpay/Stripe payment links, webhook auto-marks paid, 0.5% take rate</td></tr>
+<tr><td>MCP server, 9 tools, per-account connector URL</td><td>Payment collection: owner's UPI/bank text plus a client "I've paid" button; owner confirms</td><td>Razorpay/Stripe payment links, webhook auto-marks paid, 0.5% take rate</td></tr>
 <tr><td>Owner dashboard and full editing, including reminders</td><td>Email: real only when a Brevo key is set; otherwise "recorded, email off"</td><td>Own sending domain (SPF/DKIM), bounce handling, WhatsApp Business reminders</td></tr>
 <tr><td>Public quote and invoice pages, view tracking, accept/decline, print to PDF</td><td>Demo account's payment details are samples</td><td>GST-compliant invoice PDFs, e-sign audit trail, client portal</td></tr>
 <tr><td>Reminder scheduler with auto-cancel; activity log</td><td>Connector auth is a secret URL</td><td>OAuth 2.1 connector auth, team seats and roles, audit logs</td></tr>

@@ -1,16 +1,22 @@
 import { q, one, pool } from './db.js';
 import { randomId } from './auth.js';
 
-export const STATUSES = ['draft', 'sent', 'viewed', 'accepted', 'paid', 'declined'];
+export const STATUSES = ['draft', 'sent', 'viewed', 'changes_requested', 'accepted', 'paid', 'declined'];
+export const OPEN_STATUSES = ['draft', 'sent', 'viewed', 'changes_requested'];
 
 export const STATUS_LABEL = {
   draft: 'Draft',
   sent: 'Sent',
   viewed: 'Viewed',
+  changes_requested: 'Changes requested',
   accepted: 'Accepted, awaiting payment',
+  client_paid: 'Client marked paid',
   paid: 'Paid',
   declined: 'Declined',
 };
+
+/** Status shown in the UI: an accepted invoice the client says is paid gets its own label. */
+export const displayStatus = (quote) => (quote.status === 'accepted' && quote.client_paid_at ? 'client_paid' : quote.status);
 
 export function baseUrl() {
   return (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`)
@@ -99,14 +105,26 @@ export async function findQuote(userId, ref) {
   return one('SELECT * FROM quotes WHERE user_id = $1 AND public_id = $2', [userId, pub]);
 }
 
-export async function listQuotes(userId, status) {
-  if (status && status !== 'all') {
-    if (status === 'unpaid') {
-      return q(`SELECT * FROM quotes WHERE user_id = $1 AND status NOT IN ('paid','declined') ORDER BY created_at DESC`, [userId]);
-    }
-    return q('SELECT * FROM quotes WHERE user_id = $1 AND status = $2 ORDER BY created_at DESC', [userId, status]);
-  }
-  return q('SELECT * FROM quotes WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
+const LIST_COLS = `id, user_id, public_id, seq, title, client_name, client_email, client_company, currency, items,
+  tax_percent, discount, status, sent_at, viewed_at, view_count, accepted_at, accepted_by, invoice_seq, due_date,
+  client_paid_at, client_paid_note, paid_at, archived_at, change_requested_at, created_at, updated_at`;
+
+/** status: all | unpaid | client_paid | archived | any real status. Archived quotes only show under "archived". */
+export async function listQuotes(userId, status = 'all') {
+  const base = `SELECT ${LIST_COLS} FROM quotes WHERE user_id = $1`;
+  const order = ' ORDER BY created_at DESC';
+  if (status === 'archived') return q(`${base} AND archived_at IS NOT NULL${order}`, [userId]);
+  const live = `${base} AND archived_at IS NULL`;
+  if (!status || status === 'all') return q(live + order, [userId]);
+  if (status === 'unpaid') return q(`${live} AND status NOT IN ('paid','declined')${order}`, [userId]);
+  if (status === 'client_paid') return q(`${live} AND status = 'accepted' AND client_paid_at IS NOT NULL${order}`, [userId]);
+  return q(`${live} AND status = $2${order}`, [userId, status]);
+}
+
+export async function setArchived(quote, archived, actor) {
+  const updated = await one(`UPDATE quotes SET archived_at = ${archived ? 'now()' : 'NULL'} WHERE id = $1 RETURNING *`, [quote.id]);
+  await logEvent(quote.id, actor, archived ? 'Archived' : 'Restored from archive');
+  return updated;
 }
 
 export async function getReminders(quoteId) {
@@ -187,7 +205,7 @@ export async function updateQuote(quote, patch, actor) {
 }
 
 export async function markSent(quote, actor) {
-  if (quote.status !== 'draft') return quote;
+  if (!['draft', 'changes_requested'].includes(quote.status)) return quote;
   const updated = await one(
     `UPDATE quotes SET status = 'sent', sent_at = now(), updated_at = now() WHERE id = $1 RETURNING *`, [quote.id]);
   await logEvent(quote.id, actor, 'Marked as sent to client');
@@ -205,7 +223,7 @@ export async function recordView(quote) {
 }
 
 export async function acceptQuote(quote, name) {
-  if (!['draft', 'sent', 'viewed'].includes(quote.status)) return quote;
+  if (!OPEN_STATUSES.includes(quote.status)) return quote;
   const { rows: [{ next }] } = await pool.query(
     'SELECT COALESCE(MAX(invoice_seq), 0) + 1 AS next FROM quotes WHERE user_id = $1', [quote.user_id]);
   const updated = await one(
@@ -216,8 +234,19 @@ export async function acceptQuote(quote, name) {
   return updated;
 }
 
+export async function requestChanges(quote, text) {
+  if (!OPEN_STATUSES.includes(quote.status)) return quote;
+  const updated = await one(
+    `UPDATE quotes SET status = 'changes_requested', change_request = $2, change_requested_at = now(), updated_at = now()
+     WHERE id = $1 RETURNING *`, [quote.id, text]);
+  // Pause follow-ups while the owner revises; re-sending the quote schedules them again.
+  await q(`UPDATE reminders SET status = 'cancelled' WHERE quote_id = $1 AND status = 'scheduled'`, [quote.id]);
+  await logEvent(quote.id, 'Client', `Requested changes: "${text}"`);
+  return updated;
+}
+
 export async function declineQuote(quote, reason) {
-  if (!['draft', 'sent', 'viewed'].includes(quote.status)) return quote;
+  if (!OPEN_STATUSES.includes(quote.status)) return quote;
   const updated = await one(
     `UPDATE quotes SET status = 'declined', declined_at = now(), decline_reason = $2, updated_at = now()
      WHERE id = $1 RETURNING *`, [quote.id, reason || null]);
@@ -226,12 +255,14 @@ export async function declineQuote(quote, reason) {
   return updated;
 }
 
-export async function clientSaysPaid(quote, note) {
+export async function clientSaysPaid(quote, note, proof) {
   if (quote.status !== 'accepted') return quote;
   const updated = await one(
-    `UPDATE quotes SET client_paid_at = now(), client_paid_note = $2, updated_at = now() WHERE id = $1 RETURNING *`,
-    [quote.id, note || null]);
-  await logEvent(quote.id, 'Client', `Says they have paid${note ? `: "${note}"` : ''}. Please confirm`);
+    `UPDATE quotes SET client_paid_at = now(), client_paid_note = $2, paid_proof = $3, paid_proof_mime = $4,
+       updated_at = now() WHERE id = $1 RETURNING *`,
+    [quote.id, note || null, proof ? proof.data : null, proof ? proof.mime : null]);
+  await logEvent(quote.id, 'Client',
+    `Marked as paid${note ? ` (ref: "${note}")` : ''}${proof ? ' with a payment screenshot' : ''}. Please confirm`);
   return updated;
 }
 
@@ -253,9 +284,12 @@ export async function markPaid(quote, actor) {
   return updated;
 }
 
-export async function addReminders(quote, reminders, { replace = false } = {}, actor = 'Claude') {
+export async function addReminders(quote, reminders, { replace = false, auto = false } = {}, actor = 'Claude') {
   if (replace) {
     await q(`DELETE FROM reminders WHERE quote_id = $1 AND status = 'scheduled'`, [quote.id]);
+  } else if (!auto) {
+    // Custom reminders replace the default automatic ones that haven't gone out yet.
+    await q(`DELETE FROM reminders WHERE quote_id = $1 AND status = 'scheduled' AND auto`, [quote.id]);
   }
   const created = [];
   for (const r of reminders) {
@@ -264,11 +298,28 @@ export async function addReminders(quote, reminders, { replace = false } = {}, a
     else sendAt = new Date(Date.now() + Number(r.send_in_days || 0) * 86400000);
     if (Number.isNaN(sendAt.getTime())) throw new Error(`Invalid send time for reminder "${r.subject}"`);
     created.push(await one(
-      'INSERT INTO reminders (quote_id, send_at, subject, body) VALUES ($1,$2,$3,$4) RETURNING *',
-      [quote.id, sendAt, r.subject, r.body]));
+      'INSERT INTO reminders (quote_id, send_at, subject, body, auto) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+      [quote.id, sendAt, r.subject, r.body, auto]));
   }
-  await logEvent(quote.id, actor, `${created.length} payment reminder(s) scheduled`);
+  await logEvent(quote.id, actor, `${created.length} ${auto ? 'automatic follow-up' : 'payment reminder'}(s) scheduled`);
   return created;
+}
+
+/** Standard follow-ups used when the owner has automatic reminders on and nobody wrote custom ones. */
+export function defaultReminders(daysSetting = '3,7,14') {
+  const days = String(daysSetting).split(',').map((d) => Number(d.trim())).filter((d) => d > 0).slice(0, 5);
+  const templates = [
+    ['Following up: {{title}} ({{number}})',
+      'Hi {{client_name}},\n\nJust checking you received {{number}} for {{title}} ({{amount}}). You can review it and respond online using the button below.\n\nHappy to answer any questions.\n\nThanks,\n{{sender_name}}'],
+    ['Reminder: {{number}} for {{amount}}',
+      'Hi {{client_name}},\n\nA quick reminder about {{number}} for {{title}} ({{amount}}). It only takes a minute to review using the button below.\n\nThanks,\n{{sender_name}}'],
+    ['Final reminder: {{number}} for {{amount}}',
+      'Hi {{client_name}},\n\nThis is a final reminder about {{number}} for {{title}} ({{amount}}). Please review it using the button below, or reply to this email if anything needs to change.\n\nThanks,\n{{sender_name}}'],
+  ];
+  return days.map((d, i) => {
+    const [subject, body] = templates[Math.min(i, templates.length - 1)];
+    return { send_in_days: d, subject, body };
+  });
 }
 
 /** Fill {{placeholders}} that Claude (or the owner) wrote into reminder text. */
@@ -300,8 +351,8 @@ export function quoteForClaude(quote, extra = {}) {
     quote_number: quoteNumber(quote),
     invoice_number: invoiceNumber(quote),
     title: quote.title,
-    status: quote.status,
-    status_label: STATUS_LABEL[quote.status],
+    status: displayStatus(quote),
+    status_label: STATUS_LABEL[displayStatus(quote)],
     client: { name: quote.client_name, email: quote.client_email, company: quote.client_company },
     currency: quote.currency,
     items: quote.items,
@@ -321,6 +372,10 @@ export function quoteForClaude(quote, extra = {}) {
     accepted_by: quote.accepted_by,
     accepted_at: quote.accepted_at,
     client_says_paid: !!quote.client_paid_at,
+    client_payment_ref: quote.client_paid_note || null,
+    client_sent_payment_screenshot: !!quote.paid_proof_mime,
+    change_request: quote.change_request || null,
+    archived: !!quote.archived_at,
     paid_at: quote.paid_at,
     client_link: publicUrl(quote),
     edit_link: editUrl(quote),

@@ -111,6 +111,17 @@ CREATE TABLE IF NOT EXISTS events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS events_quote ON events (quote_id, created_at);
+
+-- v2: archive, change requests, payment proof, auto follow-up settings
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS change_request TEXT;
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS change_requested_at TIMESTAMPTZ;
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS paid_proof BYTEA;
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS paid_proof_mime TEXT;
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS auto BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_send BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_reminders BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS reminder_days TEXT NOT NULL DEFAULT '3,7,14';
 `;
 
 export async function migrate() {

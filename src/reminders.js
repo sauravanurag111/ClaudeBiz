@@ -1,5 +1,7 @@
 import { q, one } from './db.js';
-import { fillTemplate, logEvent, publicUrl, docNumber, totals, money } from './quotes.js';
+import {
+  fillTemplate, logEvent, publicUrl, editUrl, docNumber, totals, money, markSent, addReminders, defaultReminders,
+} from './quotes.js';
 import { esc } from './views.js';
 
 /**
@@ -60,10 +62,61 @@ export async function sendQuoteEmail(quote, user, { subject, message } = {}) {
   return result;
 }
 
+/**
+ * Send a quote to the client and line up its follow-ups. Used when Claude creates a quote
+ * (automatic first send) and when the owner clicks Send. Never throws for email problems:
+ * the quote is saved either way and the result says what happened.
+ */
+export async function deliverQuote(quote, user, actor, { subject, message, reminders } = {}) {
+  const result = { emailed: false, email_error: null, reminders_scheduled: 0 };
+  if (!quote.client_email) {
+    result.email_error = 'No client email on this quote, so nothing was sent.';
+    return { quote, ...result };
+  }
+  try {
+    const { delivery } = await sendQuoteEmail(quote, user, { subject, message });
+    result.emailed = delivery === 'email';
+    if (!result.emailed) result.email_error = 'Email sending is not configured on this server.';
+    await logEvent(quote.id, actor, result.emailed
+      ? `Emailed ${quote.status === 'accepted' ? 'invoice' : 'quote'} link to ${quote.client_email}`
+      : 'Send requested, but email is not configured (share the link manually)');
+    if (result.emailed) quote = await markSent(quote, actor);
+  } catch (err) {
+    result.email_error = err.message;
+    await logEvent(quote.id, 'Dealflow', `Email to ${quote.client_email} failed: ${err.message}`);
+  }
+  if (['paid', 'declined'].includes(quote.status)) return { quote, ...result };
+  if (reminders && reminders.length) {
+    result.reminders_scheduled = (await addReminders(quote, reminders, {}, actor)).length;
+  } else if (user.auto_reminders) {
+    const pending = await one(`SELECT count(*)::int AS n FROM reminders WHERE quote_id = $1 AND status = 'scheduled'`, [quote.id]);
+    if (!pending.n) {
+      result.reminders_scheduled = (await addReminders(quote, defaultReminders(user.reminder_days), { auto: true }, 'Dealflow')).length;
+    }
+  }
+  return { quote, ...result };
+}
+
+/** Tell the business owner when their client acts. Best effort: never blocks the client. */
+export async function notifyOwner(quote, subject, text) {
+  try {
+    const user = await one('SELECT * FROM users WHERE id = $1', [quote.user_id]);
+    if (!user || emailMode() !== 'email') return;
+    await sendEmail({
+      to: user.email, toName: user.name, subject, user,
+      text: `${text}\n\nOpen in Dealflow: ${editUrl(quote)}`,
+      html: `<p style="font-family:Arial,sans-serif;font-size:15px">${esc(text).replace(/\n/g, '<br>')}</p>
+<p><a href="${editUrl(quote)}" style="font-family:Arial,sans-serif">Open ${esc(docNumber(quote))} in Dealflow</a></p>`,
+    });
+  } catch (err) {
+    console.error('Owner notification failed:', err.message);
+  }
+}
+
 async function deliverReminder(reminder) {
   const quote = await one('SELECT * FROM quotes WHERE id = $1', [reminder.quote_id]);
   if (!quote) return;
-  if (['paid', 'declined'].includes(quote.status)) {
+  if (['paid', 'declined', 'changes_requested'].includes(quote.status) || quote.archived_at) {
     await q(`UPDATE reminders SET status = 'cancelled' WHERE id = $1`, [reminder.id]);
     return;
   }

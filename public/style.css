@@ -197,3 +197,7 @@ td:first-child a b { white-space: nowrap; }
   .card { padding: 16px; }
   h1 { font-size: 24px; }
 }
+.b-changes_requested { background: #fff1df; color: var(--warn); }
+.b-client_paid { background: #e0f2fe; color: #0369a1; }
+.row-actions { display: flex; gap: 6px; flex-wrap: nowrap; }
+.row-actions form { display: inline; margin: 0; }

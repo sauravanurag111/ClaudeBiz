@@ -37,6 +37,53 @@
     });
   });
 
+  // Payment screenshot on the client's invoice page: shrink images in the browser, send as a data URL.
+  document.querySelectorAll('[data-proof-form]').forEach((form) => {
+    const fileInput = form.querySelector('[data-proof-file]');
+    const hidden = form.querySelector('input[name=proof]');
+    const status = form.querySelector('[data-proof-status]');
+    const button = form.querySelector('button[type=submit]');
+    const MAX = 5 * 1024 * 1024;
+    fileInput.addEventListener('change', () => {
+      hidden.value = '';
+      const file = fileInput.files[0];
+      if (!file) { status.textContent = 'PNG, JPG or PDF, up to 5 MB.'; return; }
+      button.disabled = true;
+      status.textContent = 'Preparing file...';
+      const done = (dataUrl) => {
+        if (!dataUrl || dataUrl.length * 0.75 > MAX) {
+          status.textContent = 'That file is too large. Please choose one under 5 MB.';
+          fileInput.value = '';
+        } else {
+          hidden.value = dataUrl;
+          status.textContent = `Attached: ${file.name}`;
+        }
+        button.disabled = false;
+      };
+      const reader = new FileReader();
+      reader.onerror = () => done(null);
+      if (file.type === 'application/pdf') {
+        reader.onload = () => done(reader.result);
+        reader.readAsDataURL(file);
+        return;
+      }
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          done(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = () => done(null);
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
   // Line item editor on the quote page.
   const table = document.getElementById('items');
   if (!table) return;

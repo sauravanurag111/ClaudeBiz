@@ -7,10 +7,12 @@ import {
 } from './auth.js';
 import {
   findQuote, listQuotes, getReminders, getEvents, createQuote, updateQuote, markSent, markPaid, recordView,
-  acceptQuote, declineQuote, clientSaysPaid, addReminders, logEvent, baseUrl,
+  acceptQuote, declineQuote, clientSaysPaid, addReminders, logEvent, baseUrl, requestChanges, setArchived, docNumber,
 } from './quotes.js';
 import { handleMcp } from './mcp.js';
-import { startScheduler, runDueReminders, sendReminderNow, sendQuoteEmail, emailMode } from './reminders.js';
+import {
+  startScheduler, runDueReminders, sendReminderNow, emailMode, deliverQuote, notifyOwner,
+} from './reminders.js';
 import {
   landingPage, authPage, dashboardPage, quoteEditPage, connectPage, settingsPage, publicQuotePage, messagePage,
 } from './views.js';
@@ -24,7 +26,11 @@ const FLASH = {
   saved: ['ok', 'Saved.'],
   created: ['ok', 'Blank quote created. Fill it in and save.'],
   sent: ['ok', 'Marked as sent.'],
-  emailed: ['ok', 'Emailed the link to your client.'],
+  emailed: ['ok', 'Emailed the link to your client. Follow-up reminders are scheduled.'],
+  archived: ['ok', 'Archived. It is hidden from the main list and its reminders are paused. Find it under "Archived".'],
+  unarchived: ['ok', 'Restored from the archive.'],
+  changes: ['ok', 'Thanks! Your requested changes were sent. You\'ll get an updated quote at this same link.'],
+  badproof: ['err', 'That file could not be attached. Please upload a PNG, JPG or PDF under 5 MB.'],
   logged: ['info', 'Email sending is not configured on this server, so nothing was emailed. Copy the client link and share it directly.'],
   paid: ['ok', 'Marked as paid. Pending reminders were cancelled.'],
   rsaved: ['ok', 'Reminder updated.'],
@@ -50,7 +56,8 @@ app.use(express.static(path.join(here, '..', 'public'), { maxAge: '1h' }));
 // ---- MCP endpoint (Claude connects here) ----
 app.all('/mcp/:key', express.json({ limit: '1mb' }), handleMcp);
 
-app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+// 8 MB so a client's payment screenshot (sent as a data URL) fits.
+app.use(express.urlencoded({ extended: false, limit: '8mb' }));
 app.use(loadUser);
 
 app.get('/healthz', (_req, res) => res.json({ ok: true }));
@@ -116,8 +123,13 @@ owner.get('/', async (req, res) => {
   const { n } = await one(
     `SELECT count(*)::int AS n FROM reminders r JOIN quotes x ON x.id = r.quote_id
      WHERE x.user_id = $1 AND r.status = 'scheduled'`, [req.user.id]);
-  const filter = ['all', 'unpaid', 'accepted', 'paid', 'draft'].includes(req.query.status) ? req.query.status : 'all';
-  res.send(dashboardPage({ user: req.user, quotes, filter, scheduledCount: n, flash: flashFrom(req) }));
+  const filter = ['all', 'unpaid', 'accepted', 'client_paid', 'paid', 'draft', 'archived'].includes(req.query.status)
+    ? req.query.status : 'all';
+  const archived = filter === 'archived' ? await listQuotes(req.user.id, 'archived') : [];
+  const { a } = await one('SELECT count(*)::int AS a FROM quotes WHERE user_id = $1 AND archived_at IS NOT NULL', [req.user.id]);
+  res.send(dashboardPage({
+    user: req.user, quotes, archived, archivedCount: a, filter, scheduledCount: n, flash: flashFrom(req), emailOn: emailMode() === 'email',
+  }));
 });
 
 owner.post('/quotes/new', async (req, res) => {
@@ -134,7 +146,12 @@ async function ownQuote(req, res, next) {
   next();
 }
 const me = (req) => req.user.name || 'You';
-const back = (req, m) => `/app/quotes/${req.quote.id}?m=${m}`;
+const back = (req, m) => {
+  // Actions on the dashboard list send back=/app?... so the user stays on the list.
+  const to = req.body && typeof req.body.back === 'string' && /^\/app(\?[\w=&-]*)?$/.test(req.body.back) ? req.body.back : null;
+  if (to) return `${to}${to.includes('?') ? '&' : '?'}m=${m}`;
+  return `/app/quotes/${req.quote.id}?m=${m}`;
+};
 
 owner.get('/quotes/:id', ownQuote, async (req, res) => {
   const [reminders, events] = await Promise.all([getReminders(req.quote.id), getEvents(req.quote.id)]);
@@ -162,7 +179,23 @@ owner.post('/quotes/:id', ownQuote, async (req, res) => {
 
 owner.post('/quotes/:id/delete', ownQuote, async (req, res) => {
   await q('DELETE FROM quotes WHERE id = $1', [req.quote.id]);
-  res.redirect('/app?m=deleted');
+  const to = typeof req.body.back === 'string' && /^\/app(\?[\w=&-]*)?$/.test(req.body.back) ? req.body.back : '/app';
+  res.redirect(`${to}${to.includes('?') ? '&' : '?'}m=deleted`);
+});
+owner.post('/quotes/:id/archive', ownQuote, async (req, res) => {
+  await setArchived(req.quote, true, me(req));
+  res.redirect(back(req, 'archived'));
+});
+owner.post('/quotes/:id/unarchive', ownQuote, async (req, res) => {
+  await setArchived(req.quote, false, me(req));
+  res.redirect(back(req, 'unarchived'));
+});
+owner.get('/quotes/:id/proof', ownQuote, async (req, res) => {
+  if (!req.quote.paid_proof) return res.status(404).send(messagePage({ title: 'No attachment', text: 'The client did not attach a file.', user: req.user }));
+  res.set('Content-Type', req.quote.paid_proof_mime);
+  res.set('Content-Disposition', `inline; filename="payment-proof-${docNumber(req.quote)}.${req.quote.paid_proof_mime.split('/')[1]}"`);
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.send(req.quote.paid_proof);
 });
 owner.post('/quotes/:id/mark-sent', ownQuote, async (req, res) => {
   await markSent(req.quote, me(req));
@@ -173,14 +206,10 @@ owner.post('/quotes/:id/mark-paid', ownQuote, async (req, res) => {
   res.redirect(back(req, 'paid'));
 });
 owner.post('/quotes/:id/send', ownQuote, async (req, res) => {
-  try {
-    const { delivery } = await sendQuoteEmail(req.quote, req.user);
-    await markSent(req.quote, me(req));
-    await logEvent(req.quote.id, me(req), delivery === 'email' ? `Emailed link to ${req.quote.client_email}` : 'Tried to email link (email not configured)');
-    res.redirect(back(req, delivery === 'email' ? 'emailed' : 'logged'));
-  } catch (err) {
-    res.redirect(`/app/quotes/${req.quote.id}?m=err&e=${encodeURIComponent(err.message)}`);
-  }
+  const d = await deliverQuote(req.quote, req.user, me(req));
+  if (d.emailed) return res.redirect(back(req, 'emailed'));
+  if (emailMode() !== 'email') return res.redirect(back(req, 'logged'));
+  res.redirect(`${back(req, 'err')}&e=${encodeURIComponent(`Email not sent: ${d.email_error}`)}`);
 });
 
 const validDate = (v) => (v && !Number.isNaN(new Date(v).getTime()) ? new Date(v) : null);
@@ -231,9 +260,12 @@ owner.post('/settings', async (req, res) => {
   const b = req.body;
   await one(
     `UPDATE users SET name = $2, business_name = $3, business_address = $4, tax_id = $5,
-       currency = $6, payment_instructions = $7 WHERE id = $1 RETURNING id`,
+       currency = $6, payment_instructions = $7, auto_send = $8, auto_reminders = $9, reminder_days = $10
+     WHERE id = $1 RETURNING id`,
     [req.user.id, b.name || '', b.business_name || '', b.business_address || '', b.tax_id || '',
-      (b.currency || 'INR').trim().toUpperCase().slice(0, 3), b.payment_instructions || '']);
+      (b.currency || 'INR').trim().toUpperCase().slice(0, 3), b.payment_instructions || '',
+      b.auto_send === 'on', b.auto_reminders === 'on',
+      String(b.reminder_days || '3,7,14').split(',').map((d) => parseInt(d, 10)).filter((d) => d > 0 && d <= 365).slice(0, 5).join(',') || '3,7,14']);
   res.redirect('/app/settings?m=saved');
 });
 
@@ -260,18 +292,60 @@ app.get('/q/:pid', publicQuote, async (req, res) => {
   res.set('X-Robots-Tag', 'noindex');
   res.send(publicQuotePage({ quote, owner: req.owner, viewer: req.user, flash: flashFrom(req) }));
 });
+const who = (quote) => quote.client_name || quote.client_company || 'Your client';
+
 app.post('/q/:pid/accept', publicQuote, async (req, res) => {
   const name = String(req.body.name || '').trim().slice(0, 120);
   if (!name) return res.redirect(`/q/${req.params.pid}`);
-  await acceptQuote(req.quote, name);
+  const before = req.quote.status;
+  const quote = await acceptQuote(req.quote, name);
+  if (quote.status === 'accepted' && before !== 'accepted') {
+    notifyOwner(quote, `${name} accepted ${docNumber(req.quote)}: ${quote.title}`,
+      `${name} accepted your quote "${quote.title}". Invoice ${docNumber(quote)} has been issued.`);
+  }
   res.redirect(`/q/${req.params.pid}?m=accepted`);
 });
+app.post('/q/:pid/changes', publicQuote, async (req, res) => {
+  const text = String(req.body.changes || '').trim().slice(0, 2000);
+  if (!text) return res.redirect(`/q/${req.params.pid}`);
+  const quote = await requestChanges(req.quote, text);
+  if (quote.status === 'changes_requested') {
+    notifyOwner(quote, `${who(quote)} requested changes to ${docNumber(quote)}`,
+      `${who(quote)} asked for changes to "${quote.title}":\n\n"${text}"\n\nEdit the quote (or ask Claude to), then send it again.`);
+  }
+  res.redirect(`/q/${req.params.pid}?m=changes`);
+});
 app.post('/q/:pid/decline', publicQuote, async (req, res) => {
-  await declineQuote(req.quote, String(req.body.reason || '').trim().slice(0, 1000));
+  const reason = String(req.body.reason || req.body.changes || '').trim().slice(0, 1000);
+  const quote = await declineQuote(req.quote, reason);
+  if (quote.status === 'declined') {
+    notifyOwner(quote, `${who(quote)} declined ${docNumber(quote)}`,
+      `${who(quote)} declined "${quote.title}".${reason ? `\n\nReason: "${reason}"` : ''}`);
+  }
   res.redirect(`/q/${req.params.pid}?m=declined`);
 });
+
+const PROOF_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
+function parseProof(dataUrl) {
+  const m = /^data:([\w/+.-]+);base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
+  if (!m || !PROOF_TYPES.includes(m[1])) return null;
+  const data = Buffer.from(m[2], 'base64');
+  if (!data.length || data.length > 5 * 1024 * 1024) return null;
+  return { mime: m[1], data };
+}
+
 app.post('/q/:pid/paid', publicQuote, async (req, res) => {
-  await clientSaysPaid(req.quote, String(req.body.note || '').trim().slice(0, 300));
+  let proof = null;
+  if (req.body.proof) {
+    proof = parseProof(req.body.proof);
+    if (!proof) return res.redirect(`/q/${req.params.pid}?m=badproof`);
+  }
+  const note = String(req.body.note || '').trim().slice(0, 300);
+  const quote = await clientSaysPaid(req.quote, note, proof);
+  if (quote.client_paid_at) {
+    notifyOwner(quote, `${who(quote)} marked ${docNumber(quote)} as paid`,
+      `${who(quote)} says they paid ${docNumber(quote)} ("${quote.title}").${note ? `\nReference: ${note}` : ''}${proof ? '\nA payment screenshot is attached in Dealflow.' : ''}\n\nCheck your account, then mark it paid to stop reminders.`);
+  }
   res.redirect(`/q/${req.params.pid}?m=clientpaid`);
 });
 
