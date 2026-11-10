@@ -1,0 +1,116 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Dealflow: Strategy</title>
+<link rel="stylesheet" href="doc.css"></head><body class="compact">
+
+<section class="page">
+<div class="kicker">Page 1 · Business strategy</div>
+<h1>Dealflow</h1>
+<div class="sub">Tell Claude what you're charging. Dealflow gets you paid. Quotes that turn into invoices and chase payment,
+written by the customer's own Claude, with no AI inside our app.</div>
+
+<h2>The problem</h2>
+<p>Freelancers and small agencies (designers, developers, marketers, consultants) lose time and money between
+"the client said yes on a call" and "the money is in the bank":</p>
+<ul>
+<li><b>Writing quotes is slow.</b> Each one means rewriting scope, line items and terms in a Word or Canva template. Invoicing tools only give a blank form.</li>
+<li><b>No signal after sending.</b> A PDF on WhatsApp or email gives no sign of whether the client opened it, agreed to it or forwarded it to finance.</li>
+<li><b>Chasing payment is awkward, so it doesn't happen.</b> Reminders get sent late, inconsistently, or not at all, and cash flow suffers.</li>
+</ul>
+
+<h2>Who it's for</h2>
+<p><b>Beachhead:</b> Indian freelancers and 2–20 person studios and agencies who <i>already pay for Claude</i> and send
+5–30 quotes a month. They are comfortable with AI, price-sensitive and connected through communities, so word of mouth spreads fast.
+<b>Next:</b> the same profile in South-East Asia, the US and the UK, priced in USD.</p>
+
+<h2>The solution, and why people need it on top of Claude</h2>
+<div class="flow">
+<div><b>1 · Claude writes</b>"Quote Acme for a logo redesign, ₹40k, half upfront." Scope, items, terms.</div>
+<div><b>2 · Dealflow stores</b>Quote lands in the dashboard. Owner edits anything.</div>
+<div><b>3 · Client acts</b>Opens a public link and accepts in one click. It becomes an invoice.</div>
+<div><b>4 · Until paid</b>Claude-written reminders go out on schedule and stop when paid.</div>
+</div>
+<p><b>Claude alone</b> can write a great quote, but it can't host it, see that the client opened it, record an
+acceptance with a timestamp, keep numbering and status across months, or send an email next Tuesday after the chat
+has closed. <b>Invoicing software</b> can do those things but makes you fill forms. Dealflow combines both: the writing
+comes from the AI you already pay for, and Dealflow keeps the deal live until it's paid.</p>
+
+<h2>Business model and pricing</h2>
+<table>
+<tr><th>Plan</th><th>Price</th><th>For</th></tr>
+<tr><td>Free</td><td>₹0</td><td>3 active quotes, "Sent with Dealflow" footer (our growth loop)</td></tr>
+<tr><td>Pro</td><td>₹499 / month · $9 outside India</td><td>Unlimited quotes and invoices, reminders, own branding</td></tr>
+<tr><td>Studio</td><td>₹1,499 / month · $29</td><td>Up to 5 seats, shared client list, custom domain for links</td></tr>
+</table>
+<div class="cols">
+<div class="box"><b>Cost to serve one paying customer: about ₹26 a month.</b> That is ₹8 for hosting and database, ₹4 for email (~40 a month), ₹14 in fees for collecting our own subscription, and <b>₹0 for AI</b>, because the customer's Claude plan does that work. With a blended ARPU of ₹699 (80% Pro, 20% Studio), <b>gross margin is about 96%</b>.</div>
+<div class="box"><b>Unit economics.</b> Assumptions: blended CAC of ₹1,500, mostly community-led, and 4% monthly churn. That gives an LTV of about ₹16.8k, <b>LTV:CAC of about 11×</b> and payback in about 2.2 months. <b>Later upside:</b> built-in payment links with a 0.5% fee on money collected through Dealflow. Detail is in <i>Dealflow_Economics.xlsx</i>.</div>
+</div>
+
+<h2>Growth</h2>
+<p><b>First 100 customers (about 90 days):</b> (1) founder-led outreach to my own network of freelancers and agency
+owners, with a 30-day free Pro trial for setup help; (2) build-in-public demo clips on LinkedIn and X ("Claude wrote
+this quote, the client accepted it in 40 seconds"); (3) Indian design, developer and marketing communities
+(Discord/Slack groups, r/freelance_india, Behance/Dribbble circles); (4) listing in MCP and Claude connector directories;
+(5) the <b>viral loop</b>: every quote a client opens carries "Sent with Dealflow", and clients are often businesses
+that send quotes too.</p>
+<table>
+<tr><th>Milestone</th><th class="n">Paying customers</th><th class="n">MRR</th><th class="n">ARR</th><th>What's true then</th></tr>
+<tr><td>Month 3</td><td class="n">100</td><td class="n">₹0.7 L</td><td class="n">₹8.4 L</td><td>Retention proven with India freelancers</td></tr>
+<tr><td>Year 1</td><td class="n">1,000</td><td class="n">₹7 L</td><td class="n">₹84 L</td><td>Payment links live; WhatsApp reminders; USD pricing</td></tr>
+<tr><td>Year 3</td><td class="n">12,000</td><td class="n">₹84 L</td><td class="n">₹10 Cr</td><td>Accounts-receivable layer for small businesses in India + SEA; payments take-rate adds about 30%</td></tr>
+</table>
+</section>
+
+<section class="page">
+<div class="kicker">Page 2 · Product execution</div>
+<h1>The working product</h1>
+<div class="sub">Live, free to try, and connected to Claude through MCP. No AI keys anywhere in the app.</div>
+
+<table>
+<tr><th style="width:26%">What</th><th>Link / detail</th></tr>
+<tr><td>Live app</td><td><code>{{APP_URL}}</code></td></tr>
+<tr><td>Test login</td><td><code>demo@dealflow.app</code> / <code>demo1234</code> (or sign up for your own account in 20 seconds)</td></tr>
+<tr><td>MCP connector (test account)</td><td><code>{{MCP_URL}}</code></td></tr>
+<tr><td>Source code</td><td><code>github.com/sauravanurag111/ClaudeBiz</code></td></tr>
+</table>
+
+<h2>Connect it to Claude (about 1 minute)</h2>
+<ol style="margin:0 0 6pt;padding-left:15pt">
+<li>In Claude (claude.ai or desktop): <b>Settings → Connectors → Add custom connector</b>.</li>
+<li>Name it <b>Dealflow</b>, paste the MCP URL above, leave the OAuth fields empty, click <b>Add</b>.</li>
+<li>In a new chat, enable Dealflow in the tools menu and ask for a quote. Allow the tool when Claude asks.</li>
+</ol>
+
+<h2>The Claude integration: 8 MCP tools</h2>
+<table class="tools">
+<tr><th>Tool</th><th>Claude uses it to…</th></tr>
+<tr><td><code>create_quote</code></td><td>Send the quote it wrote (title, scope, line items, tax, discount, payment terms, T&amp;Cs). It gets back the client link and edit link.</td></tr>
+<tr><td><code>update_quote</code></td><td>Apply changes ("add a 10% discount", "split the logo into 2 phases").</td></tr>
+<tr><td><code>send_quote</code></td><td>Email the client the link, with a message Claude writes.</td></tr>
+<tr><td><code>schedule_reminders</code></td><td>Queue a reminder sequence it writes, from polite to firm, with placeholders like <code>{{amount}}</code> that Dealflow fills in.</td></tr>
+<tr><td><code>list_quotes</code><br><code>get_quote</code></td><td>Answer "What's unpaid? Did Acme open it?" with live status, views, acceptance and activity.</td></tr>
+<tr><td><code>mark_paid</code><br><code>get_business_profile</code></td><td>Close the loop (this cancels pending reminders) and read the sender details.</td></tr>
+</table>
+
+<h2>Demo flow (as in the video)</h2>
+<ol style="margin:0 0 6pt;padding-left:15pt">
+<li><b>In Claude:</b> "Create a Dealflow quote for Priya at Acme Corp (priya@acme.com): logo redesign, 3 concepts, 2 revision rounds, ₹40,000, plus brand guidelines ₹15,000, 18% GST, 50% upfront." Claude writes the scope and terms and calls <code>create_quote</code>.</li>
+<li><b>In Dealflow:</b> Q-0001 is on the dashboard. The owner edits a price and adds a line item; totals update live. Saving changes the client's page immediately.</li>
+<li><b>As the client:</b> open the public link (no login). The owner's dashboard shows "Opened". Click <b>Accept</b>: it becomes invoice INV-0001 with payment details. Click <b>I've paid</b> with a UTR.</li>
+<li><b>Back in Claude:</b> "Schedule 3 reminders…", then "What's unpaid?", then "Mark it paid". Pending reminders are cancelled automatically.</li>
+</ol>
+
+<h2>Editing experience</h2>
+<p>Every field Claude writes can be edited in the browser: client details, scope, line items (add, remove, live totals),
+discount, tax, currency, validity and due dates, payment terms and T&amp;Cs. Reminders can be edited too (send time, subject,
+body), sent immediately, or deleted. An activity timeline records who did what: Claude, the owner or the client.</p>
+
+<h2>What is real vs. simulated in v1</h2>
+<p><span class="tag built">REAL</span> MCP server and tools, Postgres storage, owner editing, public client pages,
+view tracking, acceptance records, quote-to-invoice conversion, reminder scheduler with automatic cancellation, live deployment.<br>
+<span class="tag sim">SIMULATED</span> <b>Payments</b>: no gateway yet. The invoice shows the owner's UPI or bank details, the
+client clicks "I've paid" and the owner confirms. <b>Email</b>: real when a Brevo key is configured; otherwise reminders are
+marked "recorded, email off" in the app. The demo account's payment details are samples.<br>
+<span class="tag prop">NEXT</span> Razorpay/Stripe payment links with auto-reconciliation, WhatsApp reminders, OAuth connector,
+GST-compliant invoice PDFs, team seats.</p>
+</section>
+</body></html>

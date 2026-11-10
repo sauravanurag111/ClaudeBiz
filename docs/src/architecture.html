@@ -1,0 +1,148 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Dealflow: Architecture & Implementation Notes</title>
+<link rel="stylesheet" href="doc.css"></head><body class="compact">
+
+<section class="page">
+<div class="kicker">Architecture &amp; implementation notes</div>
+<h1>Dealflow: how it's built</h1>
+<div class="sub">Claude does the thinking and writing. Dealflow does everything else. There are no AI keys in the code or configuration.</div>
+
+<svg viewBox="0 0 760 330" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Arial, sans-serif" font-size="11">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4f46e5"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#888"/></marker>
+  </defs>
+  <!-- zones -->
+  <rect x="4" y="20" width="200" height="300" rx="10" fill="#f6f6fb" stroke="#d9d9e6"/>
+  <text x="16" y="38" font-weight="700" fill="#555">CUSTOMER SIDE</text>
+  <rect x="236" y="20" width="290" height="300" rx="10" fill="#eef0ff" stroke="#c7c9f5"/>
+  <text x="248" y="38" font-weight="700" fill="#4f46e5">DEALFLOW (this repo, on Render)</text>
+  <rect x="556" y="20" width="200" height="300" rx="10" fill="#f6f6fb" stroke="#d9d9e6"/>
+  <text x="568" y="38" font-weight="700" fill="#555">PARTNERS / OUTSIDE</text>
+
+  <!-- customer side -->
+  <rect x="20" y="56" width="168" height="54" rx="8" fill="#fff" stroke="#bbb"/>
+  <text x="104" y="78" text-anchor="middle" font-weight="700">Business owner</text>
+  <text x="104" y="95" text-anchor="middle" fill="#666">uses Claude + browser</text>
+  <rect x="20" y="140" width="168" height="62" rx="8" fill="#fff" stroke="#9333ea"/>
+  <text x="104" y="162" text-anchor="middle" font-weight="700">Claude</text>
+  <text x="104" y="178" text-anchor="middle" fill="#666">customer's own plan</text>
+  <text x="104" y="193" text-anchor="middle" fill="#666">writes quotes &amp; reminders</text>
+  <rect x="20" y="238" width="168" height="62" rx="8" fill="#fff" stroke="#bbb"/>
+  <text x="104" y="260" text-anchor="middle" font-weight="700">Client</text>
+  <text x="104" y="276" text-anchor="middle" fill="#666">opens public link, no login</text>
+  <text x="104" y="291" text-anchor="middle" fill="#666">accept · decline · I've paid</text>
+
+  <!-- dealflow -->
+  <rect x="252" y="56" width="258" height="44" rx="8" fill="#fff" stroke="#4f46e5"/>
+  <text x="381" y="74" text-anchor="middle" font-weight="700">Owner web app  /app</text>
+  <text x="381" y="90" text-anchor="middle" fill="#666">dashboard, edit quote, reminders, settings</text>
+  <rect x="252" y="112" width="258" height="44" rx="8" fill="#fff" stroke="#4f46e5"/>
+  <text x="381" y="130" text-anchor="middle" font-weight="700">MCP endpoint  POST /mcp/:key</text>
+  <text x="381" y="146" text-anchor="middle" fill="#666">8 tools · Streamable HTTP · stateless</text>
+  <rect x="252" y="168" width="258" height="44" rx="8" fill="#fff" stroke="#4f46e5"/>
+  <text x="381" y="186" text-anchor="middle" font-weight="700">Public client pages  /q/:publicId</text>
+  <text x="381" y="202" text-anchor="middle" fill="#666">quote → invoice, view &amp; acceptance tracking</text>
+  <rect x="252" y="224" width="124" height="80" rx="8" fill="#fff" stroke="#4f46e5"/>
+  <text x="314" y="246" text-anchor="middle" font-weight="700">Reminder</text>
+  <text x="314" y="261" text-anchor="middle" font-weight="700">scheduler</text>
+  <text x="314" y="278" text-anchor="middle" fill="#666">every 60 s +</text>
+  <text x="314" y="292" text-anchor="middle" fill="#666">/cron/tick</text>
+  <rect x="386" y="224" width="124" height="80" rx="8" fill="#fff" stroke="#4f46e5"/>
+  <text x="448" y="250" text-anchor="middle" font-weight="700">Postgres</text>
+  <text x="448" y="267" text-anchor="middle" fill="#666">users · quotes</text>
+  <text x="448" y="282" text-anchor="middle" fill="#666">reminders · events</text>
+
+  <!-- partners -->
+  <rect x="572" y="56" width="168" height="50" rx="8" fill="#fff" stroke="#bbb"/>
+  <text x="656" y="77" text-anchor="middle" font-weight="700">Render</text>
+  <text x="656" y="93" text-anchor="middle" fill="#666">hosting + Postgres</text>
+  <rect x="572" y="168" width="168" height="50" rx="8" fill="#fff" stroke="#bbb"/>
+  <text x="656" y="189" text-anchor="middle" font-weight="700">Brevo email API</text>
+  <text x="656" y="205" text-anchor="middle" fill="#666">delivers reminder emails</text>
+  <rect x="572" y="248" width="168" height="50" rx="8" fill="#fff" stroke="#bbb"/>
+  <text x="656" y="269" text-anchor="middle" font-weight="700">cron-job.org</text>
+  <text x="656" y="285" text-anchor="middle" fill="#666">pings /cron/tick every 5 min</text>
+
+  <!-- arrows -->
+  <path d="M104,110 L104,138" stroke="#4f46e5" stroke-width="1.6" marker-end="url(#a)"/>
+  <path d="M188,170 L250,138" stroke="#4f46e5" stroke-width="1.6" marker-end="url(#a)" marker-start="url(#a)"/>
+  <text x="196" y="140" fill="#4f46e5" font-size="9.5">MCP</text>
+  <path d="M188,80 L250,78" stroke="#4f46e5" stroke-width="1.6" marker-end="url(#a)"/>
+  <path d="M188,262 L250,196" stroke="#4f46e5" stroke-width="1.6" marker-end="url(#a)" marker-start="url(#a)"/>
+  <path d="M376,264 L384,264" stroke="#888" stroke-width="1.4"/>
+  <path d="M376,264 L566,196" stroke="#888" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#g)"/>
+  <path d="M570,272 L378,280" stroke="#888" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#g)"/>
+  <path d="M656,218 C 640,300 230,325 150,302" fill="none" stroke="#888" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#g)"/>
+  <text x="420" y="320" fill="#888" font-size="9.5">reminder email with link reaches client</text>
+</svg>
+
+<h2>Data flow</h2>
+<ol style="margin:0 0 6pt;padding-left:15pt">
+<li><b>Owner → Claude:</b> "Quote Acme for a logo redesign…". Claude reads the tool descriptions Dealflow publishes over MCP and writes the content.</li>
+<li><b>Claude → Dealflow:</b> <code>POST /mcp/:key</code> → <code>create_quote</code>. The key in the URL identifies the account. Dealflow validates the input with zod schemas, computes totals and numbering (Q-0001), saves to Postgres, logs an event, and returns the public and edit links.</li>
+<li><b>Owner → Dealflow:</b> edits in <code>/app/quotes/:id</code>. Changes are saved and logged as field-level events. The client page always shows the latest version.</li>
+<li><b>Client → Dealflow:</b> <code>GET /q/:publicId</code> records the view, excluding the owner and link-preview bots. <code>POST …/accept</code> stores the name and timestamp, assigns INV-0001, sets the due date and shows payment instructions. <code>POST …/paid</code> flags "client says paid".</li>
+<li><b>Scheduler → client:</b> due reminders are claimed atomically (<code>FOR UPDATE SKIP LOCKED</code>), their placeholders (<code>{{amount}}</code>, <code>{{link}}</code>…) are filled in, and they're emailed through Brevo. Paid or declined quotes cancel pending reminders.</li>
+<li><b>Claude ← Dealflow:</b> <code>list_quotes</code> / <code>get_quote</code> return live status so Claude can report and draft follow-ups.</li>
+</ol>
+
+<h2>Our app vs. partner responsibilities</h2>
+<table>
+<tr><th style="width:24%">Who</th><th>Responsible for</th></tr>
+<tr><td><b>Dealflow</b> (built here)</td><td>Accounts and sessions; data model and storage; totals, tax, discount and numbering; status machine (draft → sent → viewed → accepted/invoice → paid, or declined); MCP tool definitions and validation; owner editing UI; public client pages; reminder scheduling, templating, sending and cancellation; activity log.</td></tr>
+<tr><td><b>Claude</b> (Anthropic, paid by the customer)</td><td>All language and reasoning: scope, line-item breakdown, pricing structure, terms, email and reminder copy, summarising status. Dealflow never calls an AI API.</td></tr>
+<tr><td><b>Render</b></td><td>Runs the Node service and the managed Postgres; HTTPS; deploys from GitHub using <code>render.yaml</code>.</td></tr>
+<tr><td><b>Brevo</b></td><td>Email delivery (free plan, verified single sender). Optional: without it, emails are recorded in-app.</td></tr>
+<tr><td><b>cron-job.org</b></td><td>External ping every 5 minutes, so reminders fire and the free instance doesn't sleep.</td></tr>
+</table>
+</section>
+
+<section class="page">
+<h2 style="margin-top:0">Tools used</h2>
+<p><b>Runtime:</b> Node.js 20+, Express 5, <code>@modelcontextprotocol/sdk</code> (Streamable HTTP server, stateless), <code>zod</code> (tool input schemas), <code>pg</code> (Postgres).
+<b>Frontend:</b> server-rendered HTML with about 120 lines of vanilla JS for the line-item editor, copy buttons and local time zones. No framework, no build step.
+<b>Security:</b> scrypt password hashing and HMAC-signed HttpOnly session cookies, both from Node's built-in crypto; everything is HTML-escaped; public IDs are random 12-character strings.
+<b>Infra:</b> Render (web service and Postgres), Brevo (email), cron-job.org. <b>Build tooling:</b> Claude Code helped write the code. That's allowed by the brief, and none of it runs inside the product.</p>
+
+<h2>Data model</h2>
+<table>
+<tr><th>Table</th><th>Key fields</th></tr>
+<tr><td>users</td><td>email, password_hash, <b>mcp_key</b> (secret connector id), business name/address/tax id, payment instructions, default currency</td></tr>
+<tr><td>quotes</td><td>public_id, seq (Q-n), invoice_seq (INV-n), client, items (JSONB), tax %, discount, scope, terms, payment terms, valid_until, due_date, status, view/accept/decline/paid timestamps</td></tr>
+<tr><td>reminders</td><td>quote_id, send_at, subject, body (with placeholders), status (scheduled / sending / sent / failed / cancelled), delivery, error</td></tr>
+<tr><td>events</td><td>quote_id, actor (Claude, owner, client, Dealflow), message, timestamp: the activity timeline</td></tr>
+</table>
+
+<h2>What was built vs. what is proposed</h2>
+<table>
+<tr><th style="width:33%"><span class="tag built">BUILT &amp; LIVE</span></th><th style="width:33%"><span class="tag sim">SIMULATED / MANUAL</span></th><th><span class="tag prop">PROPOSED PRODUCTION SYSTEM</span></th></tr>
+<tr><td>MCP server, 8 tools, per-account connector URL</td><td>Payment collection: owner's UPI/bank text plus a client "I've paid" button; owner confirms</td><td>Razorpay/Stripe payment links, webhook auto-marks paid, 0.5% take rate</td></tr>
+<tr><td>Owner dashboard and full editing, including reminders</td><td>Email: real only when a Brevo key is set; otherwise "recorded, email off"</td><td>Own sending domain (SPF/DKIM), bounce handling, WhatsApp Business reminders</td></tr>
+<tr><td>Public quote and invoice pages, view tracking, accept/decline, print to PDF</td><td>Demo account's payment details are samples</td><td>GST-compliant invoice PDFs, e-sign audit trail, client portal</td></tr>
+<tr><td>Reminder scheduler with auto-cancel; activity log</td><td>Connector auth is a secret URL</td><td>OAuth 2.1 connector auth, team seats and roles, audit logs</td></tr>
+<tr><td>Live on Render with Postgres; auto-migrating schema</td><td>Free hosting tier with a keep-alive ping</td><td>Paid instances, read replicas, queue-based scheduler (e.g. pg-boss), monitoring</td></tr>
+</table>
+
+<h2>Assumptions</h2>
+<ul>
+<li>Customers already have a Claude plan with custom connectors (MCP). Dealflow adds no AI cost.</li>
+<li>Small businesses in India mostly get paid by UPI or bank transfer, so showing payment instructions is enough for v1.</li>
+<li>One owner per account; amounts are in the quote's own currency with no FX conversion.</li>
+</ul>
+
+<h2>Limitations (v1)</h2>
+<ul>
+<li>Render free Postgres expires after 30 days, and free instances sleep without the cron ping (a cold start of about 50 s could time out a Claude tool call).</li>
+<li>The connector URL is a bearer secret. It can be reset from the Connect page, except on the shared demo account, which is pinned for reviewers.</li>
+<li>No rate limiting, file attachments or multi-user teams yet. Dashboard totals are grouped per currency.</li>
+</ul>
+
+<h2>Next steps</h2>
+<ol style="margin:0;padding-left:15pt">
+<li>Payment links with automatic reconciliation, which is the biggest value add and a revenue line.</li>
+<li>WhatsApp reminders and per-client reminder preferences.</li>
+<li>OAuth connector and listing in Claude's connector directory for one-click install.</li>
+<li>Recurring retainers ("bill Acme ₹50k on the 1st every month") and simple receivables reports, which Claude can query.</li>
+</ol>
+</section>
+</body></html>

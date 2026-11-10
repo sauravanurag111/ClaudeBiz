@@ -1,0 +1,44 @@
+@page { size: A4; margin: 11mm 13mm; }
+* { box-sizing: border-box; }
+body { font: 10pt/1.42 Inter, "Segoe UI", Roboto, Arial, sans-serif; color: #17171f; margin: 0; }
+h1 { font-size: 20pt; margin: 0 0 2pt; letter-spacing: -.02em; }
+h2 { font-size: 12.5pt; margin: 12pt 0 5pt; color: #4f46e5; }
+h3 { font-size: 10.5pt; margin: 8pt 0 3pt; }
+p { margin: 0 0 6pt; }
+ul { margin: 0 0 6pt; padding-left: 15pt; }
+li { margin-bottom: 2pt; }
+.kicker { font-size: 8pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #4f46e5; }
+.sub { color: #555566; font-size: 10.5pt; margin-bottom: 8pt; }
+.page { page-break-after: always; }
+.page:last-child { page-break-after: auto; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12pt; }
+.box { border: 1px solid #e3e3ec; border-radius: 6pt; padding: 7pt 9pt; background: #fafaff; }
+table { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 2pt 0 6pt; }
+th, td { border-bottom: 1px solid #e6e6ee; padding: 3.5pt 5pt; text-align: left; vertical-align: top; }
+th { background: #f1f1fb; font-weight: 700; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+code { font: 8.6pt ui-monospace, Menlo, Consolas, monospace; background: #f1f1f6; padding: 0 2pt; border-radius: 2pt; word-break: break-all; }
+.tag { display: inline-block; font-size: 7.5pt; font-weight: 700; padding: 0 5pt; border-radius: 8pt; }
+.built { background: #e3f6ee; color: #0f8a5f; }
+.sim { background: #fff1df; color: #b25e00; }
+.prop { background: #eef0ff; color: #4f46e5; }
+.small { font-size: 8.5pt; color: #555566; }
+.flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6pt; margin: 4pt 0 8pt; }
+.flow div { border: 1px solid #e3e3ec; border-radius: 6pt; padding: 6pt; font-size: 8.8pt; }
+.flow b { display: block; color: #4f46e5; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .06em; }
+img.shot { width: 100%; border: 1px solid #e3e3ec; border-radius: 6pt; }
+/* Two-page strategy doc: denser */
+body.compact { font-size: 8.7pt; line-height: 1.36; }
+body.compact h1 { font-size: 17pt; }
+body.compact h2 { font-size: 10.5pt; margin: 7pt 0 3pt; }
+body.compact .sub { font-size: 9pt; margin-bottom: 4pt; }
+body.compact p, body.compact ul, body.compact ol { margin-bottom: 4pt; }
+body.compact li { margin-bottom: 1pt; }
+body.compact table { font-size: 8.2pt; margin: 1pt 0 4pt; }
+body.compact th, body.compact td { padding: 2.2pt 4pt; }
+body.compact .box { padding: 5pt 7pt; font-size: 8.3pt; }
+body.compact .flow { margin: 2pt 0 5pt; }
+body.compact .flow div { padding: 4pt 5pt; font-size: 8pt; }
+body.compact code { font-size: 7.8pt; word-break: normal; white-space: nowrap; }
+body.compact td code { white-space: normal; word-break: break-all; }
+body.compact table.tools td:first-child code { white-space: nowrap; word-break: normal; }

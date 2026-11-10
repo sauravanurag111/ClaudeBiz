@@ -21,8 +21,9 @@ services:
         value: demo@dealflow.app
       - key: DEMO_PASSWORD
         value: demo1234
+      # Fixed so the shared test account's connector URL is stable: APP_URL/mcp/demo-volopay-7Qx2pLk9
       - key: DEMO_MCP_KEY
-        generateValue: true
+        value: demo-volopay-7Qx2pLk9
       - key: CRON_SECRET
         generateValue: true
       # Optional, for real email delivery (Brevo free plan). Leave empty to record emails in-app only.
