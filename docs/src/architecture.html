@@ -98,7 +98,61 @@
 </section>
 
 <section class="page">
-<h2 style="margin-top:0">Tools used</h2>
+<h2 style="margin-top:0">How it works: request flow</h2>
+<p class="small" style="margin-bottom:4pt">One quote from first sentence to paid. Purple = Claude over MCP, green = client actions on the public page, orange = scheduled reminders.</p>
+<svg viewBox="0 0 760 498" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Inter Static, Arial, sans-serif" font-size="10.5">
+<defs><marker id="m0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5b47f5"/></marker><marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b43cf0"/></marker><marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#888"/></marker><marker id="m3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0c8a5c"/></marker><marker id="m4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a95a00"/></marker></defs>
+<rect x="300" y="314" width="440" height="66" rx="8" fill="#fff6ea" stroke="#f0c98f" stroke-dasharray="4 3"/>
+<text x="306" y="325" font-size="9" fill="#a95a00" font-weight="700">LOOP until paid · stops on paid / declined / archived / changes requested</text>
+<rect x="8" y="8" width="104" height="30" rx="7" fill="#f4f4f8" stroke="#c8c8d6"/>
+<text x="60" y="27" text-anchor="middle" font-weight="700" fill="#17171f">Freelancer</text>
+<line x1="60" y1="38" x2="60" y2="490" stroke="#d4d4e0" stroke-dasharray="3 3"/>
+<rect x="128" y="8" width="104" height="30" rx="7" fill="#f6eaff" stroke="#b43cf0"/>
+<text x="180" y="27" text-anchor="middle" font-weight="700" fill="#17171f">Claude</text>
+<line x1="180" y1="38" x2="180" y2="490" stroke="#d4d4e0" stroke-dasharray="3 3"/>
+<rect x="278" y="8" width="104" height="30" rx="7" fill="#eef0ff" stroke="#5b47f5"/>
+<text x="330" y="27" text-anchor="middle" font-weight="700" fill="#17171f">Dealflow server</text>
+<line x1="330" y1="38" x2="330" y2="490" stroke="#d4d4e0" stroke-dasharray="3 3"/>
+<rect x="418" y="8" width="104" height="30" rx="7" fill="#f4f4f8" stroke="#c8c8d6"/>
+<text x="470" y="27" text-anchor="middle" font-weight="700" fill="#17171f">Postgres</text>
+<line x1="470" y1="38" x2="470" y2="490" stroke="#d4d4e0" stroke-dasharray="3 3"/>
+<rect x="538" y="8" width="104" height="30" rx="7" fill="#f4f4f8" stroke="#c8c8d6"/>
+<text x="590" y="27" text-anchor="middle" font-weight="700" fill="#17171f">Brevo email</text>
+<line x1="590" y1="38" x2="590" y2="490" stroke="#d4d4e0" stroke-dasharray="3 3"/>
+<rect x="653" y="8" width="104" height="30" rx="7" fill="#f4f4f8" stroke="#c8c8d6"/>
+<text x="705" y="27" text-anchor="middle" font-weight="700" fill="#17171f">Client</text>
+<line x1="705" y1="38" x2="705" y2="490" stroke="#d4d4e0" stroke-dasharray="3 3"/>
+<line x1="66" y1="68" x2="174" y2="68" stroke="#5b47f5" stroke-width="1.6" marker-end="url(#m0)"/>
+<text x="120.0" y="63" text-anchor="middle" fill="#2a2a3d">1. &quot;Quote Meesho for a logo redesign, ₹40k…&quot;</text>
+<line x1="186" y1="98" x2="324" y2="98" stroke="#b43cf0" stroke-width="1.6" marker-end="url(#m1)"/>
+<text x="255.0" y="93" text-anchor="middle" fill="#2a2a3d">2. create_quote (MCP over HTTPS)</text>
+<line x1="336" y1="128" x2="464" y2="128" stroke="#5b47f5" stroke-width="1.6" marker-end="url(#m0)"/>
+<text x="400.0" y="123" text-anchor="middle" fill="#2a2a3d">3. Save quote Q-0001 + schedule follow-ups</text>
+<line x1="336" y1="158" x2="584" y2="158" stroke="#5b47f5" stroke-width="1.6" marker-end="url(#m0)"/>
+<text x="460.0" y="153" text-anchor="middle" fill="#2a2a3d">4. Send cover email</text>
+<line x1="596" y1="188" x2="699" y2="188" stroke="#888" stroke-width="1.6" marker-end="url(#m2)"/>
+<text x="647.5" y="183" text-anchor="middle" fill="#2a2a3d">5. Email with &quot;Review &amp; accept&quot;</text>
+<line x1="324" y1="218" x2="186" y2="218" stroke="#b43cf0" stroke-width="1.6" marker-end="url(#m1)"/>
+<text x="255.0" y="213" text-anchor="middle" fill="#2a2a3d">6. client_link + edit_link</text>
+<line x1="66" y1="248" x2="324" y2="248" stroke="#5b47f5" stroke-width="1.6" marker-end="url(#m0)"/>
+<text x="195.0" y="243" text-anchor="middle" fill="#2a2a3d">7. Edit items / terms (optional)</text>
+<line x1="699" y1="278" x2="336" y2="278" stroke="#0c8a5c" stroke-width="1.6" marker-end="url(#m3)"/>
+<text x="517.5" y="273" text-anchor="middle" fill="#2a2a3d">8. Open /q/:id (view tracked)</text>
+<line x1="699" y1="308" x2="336" y2="308" stroke="#0c8a5c" stroke-width="1.6" marker-end="url(#m3)"/>
+<text x="517.5" y="303" text-anchor="middle" fill="#2a2a3d">9. Accept → invoice INV-0001</text>
+<line x1="336" y1="338" x2="584" y2="338" stroke="#a95a00" stroke-width="1.6" marker-end="url(#m4)"/>
+<text x="460.0" y="333" text-anchor="middle" fill="#2a2a3d">10. Cron tick: send due reminders (day 3/7/14)</text>
+<line x1="596" y1="368" x2="699" y2="368" stroke="#888" stroke-width="1.6" marker-end="url(#m2)"/>
+<text x="647.5" y="363" text-anchor="middle" fill="#2a2a3d">11. Reminder email</text>
+<line x1="699" y1="398" x2="336" y2="398" stroke="#0c8a5c" stroke-width="1.6" marker-end="url(#m3)"/>
+<text x="517.5" y="393" text-anchor="middle" fill="#2a2a3d">12. &quot;I've paid&quot; + UTR + screenshot</text>
+<line x1="66" y1="428" x2="174" y2="428" stroke="#5b47f5" stroke-width="1.6" marker-end="url(#m0)"/>
+<text x="120.0" y="423" text-anchor="middle" fill="#2a2a3d">13. &quot;Meesho paid. Mark it paid.&quot;</text>
+<line x1="186" y1="458" x2="324" y2="458" stroke="#b43cf0" stroke-width="1.6" marker-end="url(#m1)"/>
+<text x="255.0" y="453" text-anchor="middle" fill="#2a2a3d">14. mark_paid → pending reminders cancelled</text>
+</svg>
+
+<h2>Tools used</h2>
 <p><b>Runtime:</b> Node.js 20+, Express 5, <code>@modelcontextprotocol/sdk</code> (Streamable HTTP server, stateless), <code>zod</code> (tool input schemas), <code>pg</code> (Postgres).
 <b>Frontend:</b> server-rendered HTML with about 120 lines of vanilla JS for the line-item editor, copy buttons and local time zones. No framework, no build step.
 <b>Security:</b> scrypt password hashing and HMAC-signed HttpOnly session cookies, both from Node's built-in crypto; everything is HTML-escaped; public IDs are random 12-character strings.
