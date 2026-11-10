@@ -57,7 +57,12 @@ app.get('/healthz', (_req, res) => res.json({ ok: true }));
 
 // Called by an external free cron (e.g. cron-job.org) so reminders go out even if the host sleeps.
 app.all('/cron/tick', async (req, res) => {
-  if (process.env.CRON_SECRET && req.query.secret !== process.env.CRON_SECRET) return res.status(403).send('forbidden');
+  const expected = String(process.env.CRON_SECRET || '').trim();
+  // Generated secrets can contain '+', which arrives as a space when not URL-encoded.
+  const given = String(req.query.secret || req.get('x-cron-secret') || '').trim().replace(/ /g, '+');
+  if (expected && given !== expected && encodeURIComponent(given) !== expected) {
+    return res.status(403).send('forbidden: secret does not match CRON_SECRET');
+  }
   const sent = await runDueReminders();
   res.json({ ok: true, processed: sent });
 });
