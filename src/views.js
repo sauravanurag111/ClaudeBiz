@@ -273,7 +273,7 @@ export function connectPage({ user, mcpUrl, flash, demo }) {
 <div class="card">
   <h3>Your connector URL</h3>
   ${copyField(mcpUrl, 'mcp-url')}
-  <p class="hint">Keep this private: anyone with it can create and edit quotes in your account. You can reset it below.</p>
+  <p class="hint">${demo ? 'This is the shared test account, so this URL is fixed. Sign up for your own account to get a private one.' : 'Keep this private: anyone with it can create and edit quotes in your account. You can reset it below.'}</p>
 </div>
 <div class="card">
   <h3>Claude.ai or the Claude desktop app</h3>
